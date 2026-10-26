@@ -1,0 +1,12 @@
+{
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "github"
+  ],
+  "permissions": {
+    "allow": [
+      "Read(//Users/michaelpumo/Documents/**)",
+      "Bash(gh repo *)"
+    ]
+  }
+}

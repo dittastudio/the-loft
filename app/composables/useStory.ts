@@ -1,0 +1,49 @@
+import type { ISbStoriesParams, ISbStoryData, StoryblokBridgeConfigV2 } from '@storyblok/js'
+
+type UseAsyncDataOptions = Omit<Parameters<typeof useAsyncStoryblok>[1], 'api' | 'bridge'>
+
+export async function useStory<T>(
+  slug: string = '',
+  api: ISbStoriesParams = {},
+  bridge: StoryblokBridgeConfigV2 = {},
+  options: UseAsyncDataOptions = {},
+) {
+  const runtimeConfig = useRuntimeConfig()
+  const route = useRoute()
+
+  const isDraft = runtimeConfig.public.STORYBLOK_VERSION !== 'published'
+  // const cv = useState('storyblok-cv', () => Date.now())
+
+  const { story, error } = await useAsyncStoryblok(storyblokSlug(slug), {
+    api: {
+      version: isDraft ? 'draft' : 'published',
+      // cv: isDraft ? cv.value : undefined,
+      from_release:
+        typeof route.query?._storyblok_release === 'string'
+          ? route.query?._storyblok_release
+          : undefined,
+      ...api,
+    },
+    bridge: {
+      resolveLinks: 'url',
+      preventClicks: true,
+      ...bridge,
+    },
+    transform: (input) => {
+      return input
+    },
+    deep: true,
+    ...options,
+  })
+
+  if (error.value) {
+    throw createError({
+      statusCode: error.value.status || 404,
+      statusMessage: `Page not found${slug ? ` for: ${slug}` : ''}`,
+      fatal: true,
+      cause: error.value,
+    })
+  }
+
+  return story as ComputedRef<ISbStoryData<T>>
+}
