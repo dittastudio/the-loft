@@ -8,6 +8,7 @@
   --color-\*: initial;
   --color-white: hsla(0, 0%, 100%, 1);
   --color-black: hsla(0, 0%, 0%, 1);
+  --color-brand: oklch(40.8% 0.132 266.12); /* #284390 */
 
   --bp-2xs: 375px;
   --bp-xs: 480px;

@@ -51,8 +51,8 @@ export default defineNuxtConfig({
       },
       meta: [
         { name: 'author', content: 'The Loft' },
-        { name: 'msapplication-TileColor', content: '#000' },
-        { name: 'theme-color', content: '#000' },
+        { name: 'msapplication-TileColor', content: '#284390' },
+        { name: 'theme-color', content: '#284390' },
         { name: 'apple-mobile-web-app-title', content: 'The Loft' },
         { 'http-equiv': 'content-language', 'content': 'en-GB' },
       ],
