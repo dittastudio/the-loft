@@ -9,6 +9,7 @@
   --color-white: hsla(0, 0%, 100%, 1);
   --color-black: hsla(0, 0%, 0%, 1);
   --color-brand: oklch(40.8% 0.132 266.12); /* #284390 */
+  --color-grey: oklch(75.8% 0.008 186.82); /* #abb2b1 */
 
   --bp-2xs: 375px;
   --bp-xs: 480px;
@@ -19,24 +20,26 @@
   --bp-2xl: 1800px;
 
   --breakpoint-\*: initial;
-  --breakpoint-2xs: var(--bp-2xs);
-  --breakpoint-xs: var(--bp-xs);
-  --breakpoint-sm: var(--bp-sm);
-  --breakpoint-md: var(--bp-md);
-  --breakpoint-lg: var(--bp-lg);
-  --breakpoint-xl: var(--bp-xl);
-  --breakpoint-2xl: var(--bp-2xl);
+  /* Literal values, as var() is not valid inside @media queries. Keep in sync with --bp-*. */
+  --breakpoint-2xs: 375px;
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 600px;
+  --breakpoint-md: 800px;
+  --breakpoint-lg: 1200px;
+  --breakpoint-xl: 1440px;
+  --breakpoint-2xl: 1800px;
 
   --spacing-\*: initial;
   --spacing: 4px;
 
   --font-\*: initial;
-  --font-sans: sans-serif, system-ui;
-  --font-serif: serif, ui-serif;
+  --font-sans: "UniversPro57Condensed", "Arial Narrow", sans-serif;
+  --font-serif: "EB Garamond", serif;
   --font-mono: monospace, ui-monospace;
 
   --text-\*: initial;
   --text-16: 1rem; /* 16px */
+  --text-24: 1.5rem; /* 24px */
 
   --ease-inQuad: cubic-bezier(0.55, 0.085, 0.68, 0.53);
   --ease-outQuad: cubic-bezier(0.25, 0.46, 0.45, 0.94);

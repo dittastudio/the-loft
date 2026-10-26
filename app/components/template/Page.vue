@@ -14,8 +14,13 @@ const { story } = defineProps<Props>()
     v-for="block in story.content.blocks"
     :key="block._uid"
   >
+    <BlockHero
+      v-if="block.component === 'block_hero'"
+      :block="block"
+    />
+
     <BlockText
-      v-if="block.component === 'block_text'"
+      v-else-if="block.component === 'block_text'"
       :block="block"
     />
   </section>

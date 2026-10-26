@@ -3,9 +3,14 @@ import {
   defineField,
 } from '@storyblok/schema';
 
+import { typesFolder } from '../folders/types';
+
 export const settingsBlock = defineBlock({
   name: 'settings',
   is_root: true,
   is_nestable: false,
-  fields: [],
+  folder: typesFolder,
+  fields: [
+    defineField('navigation', { type: 'bloks', allow: ['element_link'] }),
+  ],
 });

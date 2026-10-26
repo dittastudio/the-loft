@@ -2,21 +2,29 @@ import { defineSchema } from '@storyblok/schema';
 import type { Schema as InferSchema, Story as InferStory } from '@storyblok/schema';
 import type { BlockContent, MapiStory as InferStoryMapi } from '@storyblok/schema';
 
+import { blockHeroBlock } from './blocks/block-hero';
 import { blockTextBlock } from './blocks/block-text';
 import { blocksBlock } from './blocks/blocks';
+import { elementLinkBlock } from './blocks/element-link';
 import { pageBlock } from './blocks/page';
 import { settingsBlock } from './blocks/settings';
 import { blocksFolder } from './folders/blocks';
+import { elementsFolder } from './folders/elements';
+import { typesFolder } from './folders/types';
 
 export const schema = defineSchema({
   blocks: {
+    blockHeroBlock,
     blockTextBlock,
     blocksBlock,
+    elementLinkBlock,
     pageBlock,
     settingsBlock,
   },
   folders: {
     blocksFolder,
+    elementsFolder,
+    typesFolder,
   },
 });
 

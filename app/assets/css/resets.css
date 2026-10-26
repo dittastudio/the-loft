@@ -12,7 +12,7 @@
 
   html {
     color: var(--color-black);
-    background-color: var(--color-white);
+    background-color: var(--color-brand);
   }
 
   body {

@@ -1,12 +1,12 @@
 {
   "status": "SUCCESS",
   "meta": {
-    "startedAt": "2026-10-26T13:45:19.555Z",
+    "startedAt": "2026-10-26T16:27:45.306Z",
     "command": "storyblok schema push",
     "cliVersion": "4.25.0",
-    "runId": "1793022319555",
+    "runId": "1793032065306",
     "config": {
-      "dryRun": true,
+      "dryRun": false,
       "delete": false,
       "migrations": true,
       "writeComponents": false,
@@ -23,14 +23,14 @@
       "reportEnabled": true,
       "reportMaxFiles": 10
     },
-    "logPath": "/Users/michaelpumo/Documents/the-loft/.storyblok/logs/296151434062627/storyblok-schema-push-1793022319555.jsonl",
-    "endedAt": "2026-10-26T13:45:19.671Z",
-    "durationMs": 116
+    "logPath": "/Users/michaelpumo/Documents/the-loft/.storyblok/logs/296151434062627/storyblok-schema-push-1793032065306.jsonl",
+    "endedAt": "2026-10-26T16:27:45.516Z",
+    "durationMs": 210
   },
   "summary": {
     "schemaPushResults": {
-      "total": 0,
-      "succeeded": 0,
+      "total": 1,
+      "succeeded": 1,
       "failed": 0
     }
   }

@@ -4,11 +4,13 @@ import {
 } from '@storyblok/schema';
 
 import { blocksFolder } from '../folders/blocks';
+import { typesFolder } from '../folders/types';
 
 export const pageBlock = defineBlock({
   name: 'page',
   is_root: true,
   is_nestable: false,
+  folder: typesFolder,
   fields: [
     defineField('blocks', { type: 'bloks', allow: [blocksFolder] }),
     defineField('tab-settings', {

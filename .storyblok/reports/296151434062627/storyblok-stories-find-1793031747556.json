@@ -1,0 +1,54 @@
+{
+  "status": "SUCCESS",
+  "meta": {
+    "startedAt": "2026-10-26T16:22:27.556Z",
+    "command": "storyblok stories find",
+    "cliVersion": "4.25.0",
+    "runId": "1793031747556",
+    "config": {
+      "entryType": "all",
+      "where": [],
+      "space": "296151434062627",
+      "containerBlock": "settings",
+      "verbose": false,
+      "apiMaxRetries": 3,
+      "apiRateLimit": 6,
+      "logConsoleEnabled": false,
+      "logConsoleLevel": "info",
+      "logFileEnabled": true,
+      "logFileLevel": "info",
+      "logFileMaxFiles": 10,
+      "uiEnabled": true,
+      "reportEnabled": true,
+      "reportMaxFiles": 10
+    },
+    "logPath": "/Users/michaelpumo/Documents/the-loft/.storyblok/logs/296151434062627/storyblok-stories-find-1793031747556.jsonl",
+    "phaseTimingsMs": {
+      "list": 104,
+      "content": 56,
+      "process": 0,
+      "total": 163
+    },
+    "endedAt": "2026-10-26T16:22:27.722Z",
+    "durationMs": 166
+  },
+  "summary": {
+    "listStoriesResults": {
+      "total": 1,
+      "succeeded": 1,
+      "skipped": 0,
+      "failed": 0
+    },
+    "fetchContentResults": {
+      "total": 1,
+      "succeeded": 1,
+      "failed": 0
+    },
+    "filterResults": {
+      "total": 1,
+      "succeeded": 1,
+      "skipped": 0,
+      "failed": 0
+    }
+  }
+}

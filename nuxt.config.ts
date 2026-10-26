@@ -39,7 +39,13 @@ export default defineNuxtConfig({
       accessToken: process.env.NUXT_STORYBLOK_TOKEN
     }],
     'nuxt-ai-ready',
+    '@nuxt/fonts',
   ],
+  fonts: {
+    families: [
+      { name: 'EB Garamond', provider: 'google', weights: [400], styles: ['italic'] },
+    ],
+  },
   ssr: !isSpa,
   devtools: false,
   app: {
@@ -58,6 +64,7 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'manifest', href: '/site.webmanifest' },
+        { rel: 'preload', href: '/fonts/UniversPro57Condensed.woff2', as: 'font', type: 'font/woff2', crossorigin: '' },
       ],
     },
   },
@@ -65,6 +72,9 @@ export default defineNuxtConfig({
   site: {
     url: 'https://the-loft.com',
     name: 'The Loft',
+  },
+  seo: {
+    automaticOgAndTwitterTags: false,
   },
   runtimeConfig: {
     STORYBLOK_SPACE_ID: process.env.NUXT_STORYBLOK_SPACE_ID,

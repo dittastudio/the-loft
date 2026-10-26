@@ -22,8 +22,8 @@ useSeoMeta({
 
 <template>
   <div>
-    <NuxtPage />
+    <SiteNavigation :items="story.content.navigation" />
 
-    <pre>{{ story }}</pre>
+    <NuxtPage />
   </div>
 </template>
