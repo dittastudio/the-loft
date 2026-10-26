@@ -1,6 +1,7 @@
 import type { Image, Page } from '#storyblok-components'
 import type { StoryblokRichtext } from '#storyblok-types'
 import type { ImageModifiers } from '@nuxt/image'
+import type { MultilinkFieldValue } from '@storyblok/schema'
 import type { ISbStoryData } from '@storyblok/js'
 import type { LocationQuery } from 'vue-router'
 
@@ -39,6 +40,19 @@ const storyblokAssetType = (filename: string): 'image' | 'video' | 'other' => {
 
   return 'other'
 }
+
+const storyblokPdf = (link: MultilinkFieldValue | undefined): string | null => {
+  if (link?.linktype !== 'asset') {
+    return null
+  }
+
+  const url = link.url || link.cached_url
+
+  return url?.toLowerCase().endsWith('.pdf') ? url : null
+}
+
+// a.storyblok.com sends no CORS headers, a2.storyblok.com does. Needed for fetching assets from JS (e.g. pdf.js).
+const storyblokCorsUrl = (url: string): string => url.replace('//a.storyblok.com/', '//a2.storyblok.com/')
 
 const storyblokRichTextContent = (richtext: StoryblokRichtext | undefined): boolean => Boolean(richtext?.content?.[0]?.content?.length)
 
@@ -94,9 +108,11 @@ export {
   isImageComponent,
   isPage,
   storyblokAssetType,
+  storyblokCorsUrl,
   isVisualEditor,
   storyblokImage,
   storyblokImageDimensions,
+  storyblokPdf,
   storyblokRichTextContent,
   storyblokSlug,
 }

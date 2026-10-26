@@ -13,6 +13,12 @@
   html {
     color: var(--color-black);
     background-color: var(--color-brand);
+    scrollbar-gutter: stable;
+
+    /* Scroll lock while a modal <dialog> is open. */
+    &:has(dialog:modal) {
+      overflow: hidden;
+    }
   }
 
   body {

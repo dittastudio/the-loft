@@ -6,6 +6,38 @@ interface Props {
 }
 
 const { items } = defineProps<Props>()
+
+type Item = NonNullable<Props['items']>[number]
+
+const isPdfOpen = ref(false)
+// Set on first open and kept, so the viewer stays mounted and reopening is instant.
+const pdf = ref<{ src: string, title: string } | null>(null)
+
+const onClick = (event: MouseEvent, item: Item) => {
+  const src = storyblokPdf(item.link)
+
+  // Let modified clicks (new tab/window, middle-click) fall through to the native link.
+  if (!src || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+    return
+  }
+
+  event.preventDefault()
+
+  if (pdf.value?.src !== src) {
+    pdf.value = { src, title: item.title ?? '' }
+  }
+
+  isPdfOpen.value = true
+}
+
+// Warm up pdf.js and the PDF on intent so both are usually ready by the time the link is clicked.
+const onIntent = (item: Item) => {
+  const src = storyblokPdf(item.link)
+
+  if (src) {
+    preloadPdf(src)
+  }
+}
 </script>
 
 <template>
@@ -25,6 +57,9 @@ const { items } = defineProps<Props>()
           <StoryblokLink
             :item="item.link"
             class="inline-flex items-center only-hover:hover:underline"
+            @click="onClick($event, item)"
+            @pointerenter="onIntent(item)"
+            @focus="onIntent(item)"
           >
             {{ item.title }}
           </StoryblokLink>
@@ -32,4 +67,30 @@ const { items } = defineProps<Props>()
       </ul>
     </div>
   </nav>
+
+  <UiModal
+    v-model:open="isPdfOpen"
+    :label="pdf?.title ?? ''"
+  >
+    <template #actions>
+      <a
+        v-if="pdf"
+        :href="pdf.src"
+        target="_blank"
+        download
+        class="inline-flex items-center only-hover:hover:underline"
+      >
+        Download
+      </a>
+    </template>
+
+    <div class="wrapper pt-(--app-gutter-outer) pb-(--app-gutter-outer)">
+      <MediaPdf
+        v-if="pdf"
+        :key="pdf.src"
+        :src="pdf.src"
+        class="mx-auto max-w-3xl"
+      />
+    </div>
+  </UiModal>
 </template>

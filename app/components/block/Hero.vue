@@ -77,8 +77,8 @@ const isBouncing = useBounce(collaboration, container, { speed: 100 })
   /* Negative margin that drops the-loft so the top of the "o" meets the top of the image. */
   --the-loft-o-offset: calc(var(--the-loft-w) * (var(--the-loft-vb-o-top) - var(--the-loft-vb-h)) / var(--the-loft-vb-w));
   --ec1-offset: calc(40 * var(--fluid-px));
-  /* Fills its two-column grid area, up to 145px. */
-  --image-w: min(100%, 145px);
+  /* Fills its two-column grid area, up to 130px. */
+  --image-w: min(100%, 130px);
 
   @variant md {
     --the-loft-w: calc(105 * var(--fluid-px));
