@@ -48,6 +48,7 @@
     "husky": "^9.1.7",
     "nuxt-ai-ready": "^3.4.0",
     "postcss-nested": "^9.0.1",
+    "postcss-utopia": "^1.1.0",
     "rolldown": "^1.2.15",
     "storyblok": "^4.25.0",
     "tailwind-merge": "^3.7.0",

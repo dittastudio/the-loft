@@ -12,21 +12,24 @@ const { items } = defineProps<Props>()
   <nav
     v-if="items?.length"
     aria-label="Main"
-    class="fixed top-0 right-0 z-10 p-4 md:p-10"
+    class="fixed inset-x-0 top-0 z-10 pointer-events-none"
   >
-    <ul class="font-sans text-right text-16 md:text-24 leading-tight lowercase">
-      <li
-        v-for="item in items"
-        :key="item._uid"
-        v-editable="item"
-      >
-        <StoryblokLink
-          :item="item.link"
-          class="only-hover:hover:underline"
+    <div class="layout-grid pt-(--app-gutter-outer)">
+      <ul class="col-start-5 col-end-8 md:col-start-10 md:col-end-13 justify-self-end flex flex-col items-end pointer-events-auto font-sans text-right text-24 leading-tight lowercase">
+        <li
+          v-for="item in items"
+          :key="item._uid"
+          v-editable="item"
         >
-          {{ item.title }}
-        </StoryblokLink>
-      </li>
-    </ul>
+          <!-- 44px tap target on touch-sized layouts; tight stack from md as per design. -->
+          <StoryblokLink
+            :item="item.link"
+            class="inline-flex items-center min-h-11 md:min-h-0 only-hover:hover:underline"
+          >
+            {{ item.title }}
+          </StoryblokLink>
+        </li>
+      </ul>
+    </div>
   </nav>
 </template>

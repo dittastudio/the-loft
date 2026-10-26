@@ -4,13 +4,8 @@
 @import "./transitions.css";
 @import "./utils.css";
 
-@theme {
-  --color-\*: initial;
-  --color-white: hsla(0, 0%, 100%, 1);
-  --color-black: hsla(0, 0%, 0%, 1);
-  --color-brand: oklch(40.8% 0.132 266.12); /* #284390 */
-  --color-grey: oklch(75.8% 0.008 186.82); /* #abb2b1 */
-
+/* `static` so these are always emitted: they're only read from JS (utils/screens.ts), which Tailwind can't see. */
+@theme static {
   --bp-2xs: 375px;
   --bp-xs: 480px;
   --bp-sm: 600px;
@@ -18,6 +13,14 @@
   --bp-lg: 1200px;
   --bp-xl: 1440px;
   --bp-2xl: 1800px;
+}
+
+@theme {
+  --color-\*: initial;
+  --color-white: hsla(0, 0%, 100%, 1);
+  --color-black: hsla(0, 0%, 0%, 1);
+  --color-brand: oklch(40.8% 0.132 266.12); /* #284390 */
+  --color-grey: oklch(75.8% 0.008 186.82); /* #abb2b1 */
 
   --breakpoint-\*: initial;
   /* Literal values, as var() is not valid inside @media queries. Keep in sync with --bp-*. */
@@ -78,4 +81,16 @@
     0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%,
     1.001
   );
+}
+@layer theme {
+  :root {
+    --app-columns: 8;
+    --app-gutter-outer: utopia.clamp(20, 40);
+    --app-gutter-inner: --spacing(2.5);
+
+    @variant md {
+      --app-columns: 12;
+      --app-gutter-inner: --spacing(5);
+    }
+  }
 }

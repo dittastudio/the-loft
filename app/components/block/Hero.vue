@@ -18,14 +18,18 @@ const isBouncing = useBounce(collaboration, container, { speed: 100 })
   <div
     ref="container"
     v-editable="block"
-    class="relative h-svh overflow-hidden"
+    class="block-hero relative grid min-h-svh py-36 overflow-hidden"
   >
-    <div class="container-grid h-full grid-rows-3 py-24">
+    <!--
+      Mobile: the group is centred as a whole. From md, equal outer rows pin the image (middle row)
+      to the vertical centre and the logo hangs off it; they grow (and the hero scrolls) if content outgrows the viewport.
+    -->
+    <div class="layout-grid content-center gap-y-10 md:gap-y-0 md:grid-rows-[1fr_auto_1fr]">
       <h1 class="sr-only">The Loft EC1</h1>
 
       <TheLoftSvg
         aria-hidden="true"
-        class="row-start-1 col-start-1 col-end-5 self-end w-full h-auto fill-current md:col-end-3"
+        class="row-start-1 col-start-2 col-end-[-1] justify-self-start w-(--the-loft-w) h-auto fill-current md:col-start-3 md:self-end md:mb-(--the-loft-o-offset)"
       />
 
       <NuxtImg
@@ -36,14 +40,14 @@ const isBouncing = useBounce(collaboration, container, { speed: 100 })
         :width="400"
         :height="400"
         format="webp"
-        sizes="2xs:50vw xs:50vw sm:50vw md:20vw lg:200px xl:200px 2xl:200px"
+        sizes="140px xl:10vw"
         fetchpriority="high"
-        class="row-start-2 col-start-4 col-end-10 self-center w-full aspect-square object-cover [clip-path:polygon(30%_0,100%_0,100%_100%,0_100%,0_18%)] md:col-start-6 md:col-end-8"
+        class="row-start-2 col-start-6 col-end-8 justify-self-center w-full max-w-none aspect-square object-cover [clip-path:polygon(30%_0,100%_0,100%_100%,0_100%,0_18%)] md:w-(--image-w)"
       />
 
       <Ec1Svg
         aria-hidden="true"
-        class="row-start-3 col-start-4 col-end-7 self-start w-full h-auto fill-current md:col-end-5"
+        class="row-start-3 col-start-4 col-end-[-1] self-start justify-self-start w-(--ec1-w) h-auto mt-(--ec1-offset) fill-current"
       />
     </div>
 
@@ -57,3 +61,35 @@ const isBouncing = useBounce(collaboration, container, { speed: 100 })
     </p>
   </div>
 </template>
+
+<style scoped>
+@reference "~/assets/css/app.css";
+
+.block-hero {
+  /* One design pixel: a fixed 1px below xl, then scales with the viewport from 1440px. */
+  --fluid-px: 1px;
+
+  /* SVG viewBox measurements. */
+  --the-loft-vb-w: 227;
+  --the-loft-vb-h: 296;
+  --the-loft-vb-o-top: 210.37; /* top of the "o" in "loft" */
+  --ec1-vb-w: 140;
+
+  /* ec1 derives from the-loft so the logo pair stays proportional. */
+  --the-loft-w: calc(114 * var(--fluid-px));
+  --ec1-w: calc(var(--the-loft-w) * var(--ec1-vb-w) / var(--the-loft-vb-w));
+  /* Negative margin that drops the-loft so the top of the "o" meets the top of the image. */
+  --the-loft-o-offset: calc(var(--the-loft-w) * (var(--the-loft-vb-o-top) - var(--the-loft-vb-h)) / var(--the-loft-vb-w));
+  --ec1-offset: calc(40 * var(--fluid-px));
+  --image-w: calc(140 * var(--fluid-px));
+
+  @variant md {
+    --the-loft-w: calc(120 * var(--fluid-px));
+    --ec1-offset: calc(80 * var(--fluid-px));
+  }
+
+  @variant xl {
+    --fluid-px: calc(100vw / 1440);
+  }
+}
+</style>

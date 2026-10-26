@@ -25,5 +25,15 @@ useSeoMeta({
     <SiteNavigation :items="story.content.navigation" />
 
     <NuxtPage />
+
+    <DevOnly>
+      <DevGuide
+        columns="var(--app-columns)"
+        :max-columns="12"
+        inner-gutter="var(--app-gutter-inner)"
+        outer-gutter="var(--app-gutter-outer)"
+        color="rgb(255 105 180 / 0.25)"
+      />
+    </DevOnly>
   </div>
 </template>
