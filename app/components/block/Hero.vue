@@ -20,17 +20,12 @@ const isBouncing = useBounce(collaboration, container, { speed: 100 })
     v-editable="block"
     class="block-hero relative grid min-h-svh py-36 overflow-hidden"
   >
-    <!--
-      Columns mirror the site grid so the logo and image line up with it.
-      Mobile: the group is centred as a whole. From md, equal outer rows pin the image (middle row)
-      to the vertical centre and the logo hangs off it; they grow (and the hero scrolls) if content outgrows the viewport.
-    -->
-    <div class="wrapper grid grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] content-center gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0 md:grid-rows-[1fr_auto_1fr]">
+    <div class="wrapper grid md:max-w-(--max-w) md:mx-auto grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] content-center gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0 md:grid-rows-[1fr_auto_1fr]">
       <h1 class="sr-only">The Loft EC1</h1>
 
       <TheLoftSvg
         aria-hidden="true"
-        class="row-start-1 col-start-2 col-end-[-1] justify-self-start w-(--the-loft-w) h-auto fill-current md:col-start-3 md:self-end md:mb-(--the-loft-o-offset)"
+        class="row-start-1 col-start-2 lg:col-start-1 col-end-[-1] justify-self-start w-(--the-loft-w) h-auto fill-current md:self-end md:mb-(--the-loft-o-offset)"
       />
 
       <NuxtImg
@@ -41,14 +36,14 @@ const isBouncing = useBounce(collaboration, container, { speed: 100 })
         :width="400"
         :height="400"
         format="webp"
-        sizes="140px xl:10vw"
+        sizes="sm:25vw md:12vw lg:9vw"
         fetchpriority="high"
-        class="row-start-2 col-start-6 col-end-8 justify-self-center w-full max-w-none aspect-square object-cover [clip-path:polygon(30%_0,100%_0,100%_100%,0_100%,0_18%)] md:w-(--image-w)"
+        class="row-start-2 col-start-6 col-end-8 md:col-start-5 md:col-end-6 lg:col-start-4 lg:col-end-5 justify-self-center w-(--image-w) max-w-none aspect-square object-cover [clip-path:polygon(30%_0,100%_0,100%_100%,0_100%,0_18%)]"
       />
 
       <Ec1Svg
         aria-hidden="true"
-        class="row-start-3 col-start-4 col-end-[-1] self-start justify-self-start w-(--ec1-w) h-auto mt-(--ec1-offset) fill-current"
+        class="row-start-3 col-start-4 md:col-start-3 lg:col-start-2 col-span-1 self-start justify-self-start md:justify-self-end w-(--ec1-w) h-auto mt-(--ec1-offset) fill-current"
       />
     </div>
 
@@ -77,16 +72,22 @@ const isBouncing = useBounce(collaboration, container, { speed: 100 })
   --ec1-vb-w: 140;
 
   /* ec1 derives from the-loft so the logo pair stays proportional. */
-  --the-loft-w: calc(114 * var(--fluid-px));
+  --the-loft-w: calc(115.87 * var(--fluid-px));
   --ec1-w: calc(var(--the-loft-w) * var(--ec1-vb-w) / var(--the-loft-vb-w));
   /* Negative margin that drops the-loft so the top of the "o" meets the top of the image. */
   --the-loft-o-offset: calc(var(--the-loft-w) * (var(--the-loft-vb-o-top) - var(--the-loft-vb-h)) / var(--the-loft-vb-w));
   --ec1-offset: calc(40 * var(--fluid-px));
-  --image-w: calc(140 * var(--fluid-px));
+  /* Fills its two-column grid area, up to 145px. */
+  --image-w: min(100%, 145px);
 
   @variant md {
-    --the-loft-w: calc(120 * var(--fluid-px));
+    --the-loft-w: calc(105 * var(--fluid-px));
     --ec1-offset: calc(80 * var(--fluid-px));
+    /* The image sits in the single middle column of the 7-column grid. */
+    --image-w: calc(100% + 2 * var(--app-gutter-inner));
+    /* The composition is capped to a centred box spanning site columns 3-9 at 1440 (874px of content), re-gridded into 7 columns. */
+    --app-columns: 7;
+    --max-w: calc(874 * var(--fluid-px) + 2 * var(--app-gutter-outer));
   }
 
   @variant xl {

@@ -86,11 +86,10 @@
   :root {
     --app-columns: 8;
     --app-gutter-outer: utopia.clamp(20, 40);
-    --app-gutter-inner: --spacing(2.5);
+    --app-gutter-inner: 1px;
 
     @variant md {
-      --app-columns: 12;
-      --app-gutter-inner: --spacing(5);
+      --app-columns: 11;
     }
   }
 }
