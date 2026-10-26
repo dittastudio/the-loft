@@ -21,10 +21,11 @@ const isBouncing = useBounce(collaboration, container, { speed: 100 })
     class="block-hero relative grid min-h-svh py-36 overflow-hidden"
   >
     <!--
+      Columns mirror the site grid so the logo and image line up with it.
       Mobile: the group is centred as a whole. From md, equal outer rows pin the image (middle row)
       to the vertical centre and the logo hangs off it; they grow (and the hero scrolls) if content outgrows the viewport.
     -->
-    <div class="layout-grid content-center gap-y-10 md:gap-y-0 md:grid-rows-[1fr_auto_1fr]">
+    <div class="wrapper grid grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] content-center gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0 md:grid-rows-[1fr_auto_1fr]">
       <h1 class="sr-only">The Loft EC1</h1>
 
       <TheLoftSvg

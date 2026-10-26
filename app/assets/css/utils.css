@@ -5,17 +5,3 @@
   width: 100%;
   padding-inline: var(--app-gutter-outer);
 }
-
-/* Site grid. Children get --app-col (one column's width) for sizing off the grid. */
-@utility layout-grid {
-  width: 100%;
-  padding-inline: var(--app-gutter-outer);
-  display: grid;
-  grid-template-columns: repeat(var(--app-columns), minmax(0, 1fr));
-  column-gap: var(--app-gutter-inner);
-  container-type: inline-size;
-
-  & > * {
-    --app-col: calc((100cqi - (var(--app-columns) - 1) * var(--app-gutter-inner)) / var(--app-columns));
-  }
-}

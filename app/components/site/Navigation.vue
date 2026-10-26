@@ -14,8 +14,8 @@ const { items } = defineProps<Props>()
     aria-label="Main"
     class="fixed inset-x-0 top-0 z-10 pointer-events-none"
   >
-    <div class="layout-grid pt-(--app-gutter-outer)">
-      <ul class="col-start-5 col-end-8 md:col-start-10 md:col-end-13 justify-self-end flex flex-col items-end pointer-events-auto font-sans text-right text-24 leading-tight lowercase">
+    <div class="wrapper flex justify-end pt-(--app-gutter-outer)">
+      <ul class="flex flex-col items-end pointer-events-auto font-sans text-right text-24 leading-tight lowercase">
         <li
           v-for="item in items"
           :key="item._uid"
@@ -24,7 +24,7 @@ const { items } = defineProps<Props>()
           <!-- 44px tap target on touch-sized layouts; tight stack from md as per design. -->
           <StoryblokLink
             :item="item.link"
-            class="inline-flex items-center min-h-11 md:min-h-0 only-hover:hover:underline"
+            class="inline-flex items-center only-hover:hover:underline"
           >
             {{ item.title }}
           </StoryblokLink>
