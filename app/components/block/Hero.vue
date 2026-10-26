@@ -9,8 +9,8 @@ interface Props {
 
 const { block } = defineProps<Props>()
 
-const container = useTemplateRef<HTMLElement>('container')
-const collaboration = useTemplateRef<HTMLElement>('collaboration')
+const container = useTemplateRef('container')
+const collaboration = useTemplateRef('collaboration')
 const isBouncing = useBounce(collaboration, container, { speed: 100 })
 </script>
 
