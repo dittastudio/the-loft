@@ -1,0 +1,139 @@
+{
+  "timestamp": "2026-10-26T13:33:00.267Z",
+  "spaceId": 296151434062627,
+  "remote": {
+    "components": [
+      {
+        "name": "blocks",
+        "display_name": null,
+        "description": "",
+        "created_at": "2026-10-26T13:29:06.509Z",
+        "updated_at": "2026-10-26T13:29:06.509Z",
+        "id": 234830833701406,
+        "schema": {},
+        "image": null,
+        "preview_field": null,
+        "is_root": false,
+        "preview_tmpl": null,
+        "is_nestable": true,
+        "all_presets": [],
+        "preset_id": null,
+        "real_name": "blocks",
+        "component_group_uuid": null,
+        "color": null,
+        "icon": null,
+        "internal_tags_list": [],
+        "internal_tag_ids": [],
+        "content_type_asset_preview": null,
+        "metadata": {}
+      },
+      {
+        "name": "page",
+        "display_name": null,
+        "description": null,
+        "created_at": "2026-10-26T12:58:31.575Z",
+        "updated_at": "2026-10-26T13:27:31.992Z",
+        "id": 234823317815675,
+        "schema": {},
+        "image": null,
+        "preview_field": null,
+        "is_root": true,
+        "preview_tmpl": null,
+        "is_nestable": false,
+        "all_presets": [],
+        "preset_id": null,
+        "real_name": "page",
+        "component_group_uuid": null,
+        "color": null,
+        "icon": null,
+        "internal_tags_list": [],
+        "internal_tag_ids": [],
+        "content_type_asset_preview": null,
+        "metadata": {}
+      }
+    ],
+    "componentFolders": [],
+    "datasources": []
+  },
+  "changes": [
+    {
+      "type": "folder",
+      "name": "blocks",
+      "action": "create",
+      "after": {
+        "name": "Blocks",
+        "path": "blocks",
+        "parentPath": null
+      }
+    },
+    {
+      "type": "component",
+      "name": "block_text",
+      "action": "create",
+      "after": {
+        "id": 1,
+        "created_at": "",
+        "updated_at": "",
+        "is_root": false,
+        "is_nestable": true,
+        "name": "block_text",
+        "display_name": "Text",
+        "folder": "blocks",
+        "schema": {
+          "text": {
+            "type": "richtext",
+            "pos": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "component",
+      "name": "page",
+      "action": "update",
+      "before": {
+        "name": "page",
+        "display_name": null,
+        "description": null,
+        "created_at": "2026-10-26T12:58:31.575Z",
+        "updated_at": "2026-10-26T13:27:31.992Z",
+        "id": 234823317815675,
+        "schema": {},
+        "image": null,
+        "preview_field": null,
+        "is_root": true,
+        "preview_tmpl": null,
+        "is_nestable": false,
+        "all_presets": [],
+        "preset_id": null,
+        "real_name": "page",
+        "component_group_uuid": null,
+        "color": null,
+        "icon": null,
+        "internal_tags_list": [],
+        "internal_tag_ids": [],
+        "content_type_asset_preview": null,
+        "metadata": {}
+      },
+      "after": {
+        "id": 1,
+        "created_at": "",
+        "updated_at": "",
+        "is_root": true,
+        "is_nestable": false,
+        "name": "page",
+        "schema": {
+          "blocks": {
+            "type": "bloks",
+            "pos": 0,
+            "component_group_whitelist": [
+              "blocks"
+            ],
+            "restrict_components": true,
+            "restrict_type": "groups"
+          }
+        }
+      }
+    }
+  ]
+}

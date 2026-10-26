@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import type { Page } from '#storyblok-components'
+import type { Block } from '#storyblok-schema'
 import type { ISbStoryData } from '@storyblok/js'
 
 interface Props {
-  story: ISbStoryData<Page>
+  story: ISbStoryData<Block<'page'>>
 }
 
 const { story } = defineProps<Props>()
@@ -20,7 +20,3 @@ const { story } = defineProps<Props>()
     />
   </section>
 </template>
-
-<style scoped>
-@reference "@/assets/css/app.css";
-</style>

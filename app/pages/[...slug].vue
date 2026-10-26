@@ -1,33 +1,28 @@
 <script lang="ts" setup>
-import type { Page } from '#storyblok-components'
+import type { Block } from '#storyblok-schema'
 
 const route = useRoute()
 
 const relations: string[] = []
 
-const story = await useStory<Page>(
+const story = await useStory<Block<'page'>>(
   route.path,
   { resolve_relations: relations },
   { resolveRelations: relations },
 )
 
-const imageOptions = {
-  width: 1200,
-  height: 630,
-  format: 'jpg',
-  quality: 80,
-}
+const { seo_title, seo_description, seo_image } = story.value.content
+const imageOptions = { width: 1200, height: 630, format: 'jpg', smart: true, quality: 90 }
 
 useSeoMeta({
-  title: story.value?.content.seo_title ?? '',
-  description: story.value?.content.seo_description,
-  ogTitle: story.value?.content.seo_title ?? '',
-  ogDescription: story.value?.content.seo_description,
-  ogImage: storyblokImage(story.value?.content.seo_image?.filename, imageOptions) || null,
+  title: seo_title ?? story.value.name,
+  description: seo_description,
+  ogTitle: seo_title ?? story.value.name,
+  ogDescription: seo_description,
+  ogImage: storyblokImage(seo_image?.filename, imageOptions) || null,
+  ogImageWidth: imageOptions.width,
+  ogImageHeight: imageOptions.height,
   ogType: 'website',
-  twitterTitle: story.value?.content.seo_title ?? '',
-  twitterCard: 'summary_large_image',
-  twitterImage: storyblokImage(story.value?.content.seo_image?.filename, imageOptions) || null,
 })
 </script>
 

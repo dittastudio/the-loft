@@ -1,7 +1,8 @@
 import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
-import devtoolsJson from 'vite-plugin-devtools-json'
 import svgLoader from 'vite-svg-loader'
+
+const isSpa = process.env.IS_SPA === 'true'
 
 export default defineNuxtConfig({
   modules: [
@@ -12,13 +13,6 @@ export default defineNuxtConfig({
           '/api/sitemap',
         ],
       }
-    }],
-    ['@nuxt/eslint', {
-      config: {
-        standalone: false,
-        stylistic: true,
-        autoInit: false,
-      },
     }],
     ['@nuxt/image', {
       provider: 'storyblok',
@@ -46,7 +40,7 @@ export default defineNuxtConfig({
     }],
     'nuxt-ai-ready',
   ],
-  ssr: true,
+  ssr: !isSpa,
   devtools: false,
   app: {
     pageTransition: { name: 'fade', mode: 'out-in' },
@@ -55,13 +49,11 @@ export default defineNuxtConfig({
       htmlAttrs: {
         lang: 'en-GB',
       },
-      charset: 'utf-8',
-      viewport: 'width=device-width, initial-scale=1',
       meta: [
-        { name: 'author', content: '<APP_SITE_NAME>' },
-        { name: 'msapplication-TileColor', content: '<APP_ACCENT_COLOR>' },
-        { name: 'theme-color', content: '<APP_ACCENT_COLOR>' },
-        { name: 'apple-mobile-web-app-title', content: '<APP_SITE_NAME>' },
+        { name: 'author', content: 'The Loft' },
+        { name: 'msapplication-TileColor', content: '#000' },
+        { name: 'theme-color', content: '#000' },
+        { name: 'apple-mobile-web-app-title', content: 'The Loft' },
         { 'http-equiv': 'content-language', 'content': 'en-GB' },
       ],
       link: [
@@ -71,8 +63,8 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/css/app.css'],
   site: {
-    url: '<APP_SITE_URL>',
-    name: '<APP_SITE_NAME>',
+    url: 'https://the-loft.com',
+    name: 'The Loft',
   },
   runtimeConfig: {
     STORYBLOK_SPACE_ID: process.env.NUXT_STORYBLOK_SPACE_ID,
@@ -82,11 +74,23 @@ export default defineNuxtConfig({
     },
   },
   alias: {
-    '#storyblok-components': fileURLToPath(new URL('./.storyblok/types/<STORYBLOK_SPACE_ID>/storyblok-components', import.meta.url)),
-    '#storyblok-types': fileURLToPath(new URL('./.storyblok/types/storyblok', import.meta.url)),
+    '#storyblok-schema': fileURLToPath(new URL('./.storyblok/schema/schema', import.meta.url)),
   },
   routeRules: {
-    '/**': { prerender: process.env.NUXT_PRERENDER === 'true' },
+    '/**': {
+      prerender: !isSpa,
+    },
+  },
+  nitro: {
+    experimental: {
+      wasm: true, // ...for Cloudflare Workers
+    },
+    prerender: {
+      crawlLinks: !isSpa,
+      routes: isSpa ? [] : ['/'],
+      autoSubfolderIndex: false,
+      ignore: [(route) => route.includes('?')],
+    },
   },
   compatibilityDate: '2026-02-10',
   vite: {
@@ -98,7 +102,6 @@ export default defineNuxtConfig({
       ],
     },
     plugins: [
-      devtoolsJson(),
       tailwindcss(),
       svgLoader({
         svgo: false,

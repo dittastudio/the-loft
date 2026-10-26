@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import type { Settings } from '#storyblok-components'
+import type { Block } from '#storyblok-schema'
 
-const story = await useStory<Settings>('/settings')
+const story = await useStory<Block<'settings'>>('/settings')
 const route = useRoute()
 
 const globalClasses = computed(() => ({
@@ -15,7 +15,7 @@ useHead({
 })
 
 useSeoMeta({
-  titleTemplate: title => (title ? `${title} - <APP_SITE_NAME>` : '<APP_SITE_NAME>'),
+  titleTemplate: title => (title ? `${title} - The Loft` : 'The Loft'),
   robots: 'index, follow',
 })
 </script>

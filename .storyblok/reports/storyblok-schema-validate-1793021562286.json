@@ -1,0 +1,42 @@
+{
+  "status": "SUCCESS",
+  "meta": {
+    "startedAt": "2026-10-26T13:32:42.286Z",
+    "command": "storyblok schema validate",
+    "cliVersion": "4.25.0",
+    "runId": "1793021562286",
+    "config": {
+      "level": "warning",
+      "format": "pretty",
+      "verbose": false,
+      "apiMaxRetries": 3,
+      "apiRateLimit": 6,
+      "logConsoleEnabled": false,
+      "logConsoleLevel": "info",
+      "logFileEnabled": true,
+      "logFileLevel": "info",
+      "logFileMaxFiles": 10,
+      "uiEnabled": true,
+      "reportEnabled": true,
+      "reportMaxFiles": 10
+    },
+    "logPath": "/Users/michaelpumo/Documents/the-loft/.storyblok/logs/storyblok-schema-validate-1793021562286.jsonl",
+    "validation": {
+      "unitNoun": "entities",
+      "errors": 0,
+      "warnings": 0,
+      "unitsWithIssues": 0,
+      "unitsTotal": 3,
+      "groups": []
+    },
+    "endedAt": "2026-10-26T13:32:42.383Z",
+    "durationMs": 97
+  },
+  "summary": {
+    "validation": {
+      "total": 3,
+      "succeeded": 3,
+      "failed": 0
+    }
+  }
+}

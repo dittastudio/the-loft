@@ -1,6 +1,6 @@
 {
-  "name": "<APP_SITE_NAME>",
-  "short_name": "<APP_SITE_NAME>",
+  "name": "The Loft",
+  "short_name": "The Loft",
   "icons": [
     {
       "src": "/icon-16x16.png",
@@ -27,7 +27,7 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "<APP_ACCENT_COLOR>",
-  "background_color": "<APP_ACCENT_COLOR>",
+  "theme_color": "#000",
+  "background_color": "#000",
   "display": "standalone"
 }

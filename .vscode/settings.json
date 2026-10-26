@@ -1,49 +1,27 @@
 {
-  "css.lint.unknownAtRules": "ignore",
   "workbench.editorAssociations": { "*.svg": "default" },
-  "eslint.useFlatConfig": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "js/ts.suggest.autoImports": false,
+  "npm.scriptRunner": "vp",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "oxc.configPath": "./.oxlintrc.json",
+  "oxc.fmt.configPath": "./.oxfmtrc.json",
+  "css.validate": false,
+  "css.lint.unknownAtRules": "ignore",
   "files.associations": {
     "*.css": "tailwindcss"
   },
-
-  // Disable the default formatter, use eslint instead
-  "prettier.enable": false,
-  "editor.formatOnSave": false,
-
-  // Auto fix
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit",
-    "source.organizeImports": "never"
+    "source.fixAll.oxc": "explicit"
   },
-
-  // Enable eslint for all supported languages
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact",
-    "vue",
-    "html",
-    "markdown",
-    "json",
-    "jsonc",
-    "yaml",
-    "toml",
-    "xml",
-    "gql",
-    "graphql",
-    "astro",
-    "svelte",
-    "css",
-    "less",
-    "scss",
-    "pcss",
-    "postcss"
-  ],
   "[vue]": {
-    "editor.defaultFormatter": "Vue.volar"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
-  "svg.preview.background": "transparent"
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "svg.preview.background": "custom"
 }
