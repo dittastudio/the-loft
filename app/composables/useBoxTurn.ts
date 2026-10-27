@@ -24,6 +24,7 @@ interface BoxTurnOptions {
   reach?: number // how far from the resting area towards the edge, as a fraction, the cursor goes before the box fully takes over the shape
   response?: number // ms the spring following the cursor takes to swing once, lower is snappier
   bounce?: number // how far the spring following the cursor overshoots, 0 for none
+  leave?: number // ms the spring easing it back once the cursor leaves the window takes to swing once, which never overshoots
   duration?: number // ms a quarter spin takes, without a cursor
   tilt?: number // degrees the box lifts mid-spin, without a cursor
   rest?: Point // shortest and longest ms between spins, without a cursor
@@ -217,7 +218,14 @@ const fitBox = (orientations: Mat3[], distance: number, scale: number) => {
     .map(([x, y]): Point => [CENTRE[0] + (x - offsetX) * fit, CENTRE[1] + (y - offsetY) * fit])
 }
 
-const range = (from: number, to: number, steps: number) => Array.from({ length: steps + 1 }, (_, i) => from + ((to - from) * i) / steps)
+// Small fixed steps keep the motion the same at any frame rate.
+const steps = (delta: number, step: (dt: number) => void) => {
+  for (let left = delta / 1000; left > 0; left -= 1 / 120) {
+    step(Math.min(left, 1 / 120))
+  }
+}
+
+const range = (from: number, to: number, count: number) => Array.from({ length: count + 1 }, (_, i) => from + ((to - from) * i) / count)
 const random = ([min, max]: Point) => min + Math.random() * (max - min)
 
 // Turns the outline of a 3D box inside `target`'s clip-path, resting on `shape`, over an `image` that overflows it, and
@@ -227,7 +235,7 @@ const random = ([min, max]: Point) => min + Math.random() * (max - min)
 export default function useBoxTurn(
   target: Ref<HTMLElement | null>,
   image: Ref<HTMLElement | null>,
-  { shape, scale = 1.6, drift = 0.06, distance = 4, turns = [0.5, 0.5], reach = 0.2, response = 500, bounce = 0.3, duration = 1700, tilt = 12, rest = [3000, 6000], scroll = {} }: BoxTurnOptions,
+  { shape, scale = 1.6, drift = 0.06, distance = 4, turns = [0.5, 0.5], reach = 0.2, response = 500, bounce = 0.3, leave = 1800, duration = 1700, tilt = 12, rest = [3000, 6000], scroll = {} }: BoxTurnOptions,
 ) {
   // Cell units to a percentage of the cell, reaching outside it as the box turns.
   const toClipPath = (points: Point[]) => `polygon(${points
@@ -244,9 +252,10 @@ export default function useBoxTurn(
   }
 
   // Cell units to a percentage of the image, which is drawn at `scale` plus room to drift both ways.
+  const toPercent = (drift / (scale + 2 * drift)) * 100
+
   const setDrift = (x: number, y: number) => {
     if (image.value) {
-      const toPercent = (drift / (scale + 2 * drift)) * 100
       image.value.style.transform = x || y ? `translate3d(${+(x * toPercent).toFixed(3)}%, ${+(y * toPercent).toFixed(3)}%, 0)` : ''
     }
   }
@@ -265,8 +274,8 @@ export default function useBoxTurn(
   const isVisible = useElementVisibility(target)
   const { width: windowWidth, height: windowHeight } = useWindowSize({ listenOrientation: false })
 
-  // Half the width of the box, and its centre in the viewport, measured as the cursor moves.
-  let zone = 0
+  // Half the width and height of the box, and its centre in the viewport, measured as the cursor moves.
+  const zone: Point = [0, 0]
   const centre: Point = [0, 0]
 
   const mode = computed(() => {
@@ -282,48 +291,65 @@ export default function useBoxTurn(
   let box: ReturnType<typeof fitBox> | undefined
   const getBox = () => box ??= fitBox(range(0, Math.PI / 2, 12).flatMap(yaw => range(-Math.PI, Math.PI, 48).map(pitch => turn(yaw, pitch))), distance, scale)
 
-  // Where the cursor is from the centre of the box, -1 to 1 at the edges of the viewport.
-  const pointer: Point = [0, 0]
-  const current: Point = [0, 0]
-  const velocity: Point = [0, 0]
+  // Where the cursor is from the centre of the box, -1 to 1 at the edges of the viewport, which the image drifts with,
+  // then how far the box turns for it. The turn springs on its own, past the resting area, so it eases into rest in sight
+  // rather than stopping dead at the edge of the box.
+  type Aim = [number, number, number, number]
+  const pointer: Aim = [0, 0, 0, 0]
+  const current: Aim = [0, 0, 0, 0]
+  const velocity: Aim = [0, 0, 0, 0]
   const isSettled = shallowRef(true)
 
-  const moveTo = (x: number, y: number) => {
-    pointer[0] = x
-    pointer[1] = y
+  // A spring with unit mass, stiff enough to swing once every `response`, damped short of critical by `bounce`.
+  const springOf = (ms: number, overshoot: number) => {
+    const stiffness = ((2 * Math.PI) / (ms / 1000)) ** 2
+
+    return { stiffness, damping: 2 * (1 - overshoot) * Math.sqrt(stiffness) }
+  }
+
+  // Snappy while following. Easing back it's slow and critically damped, so it eases out to rest without overshooting.
+  // It keeps its speed when swapping, so either can take over mid-swing.
+  const followSpring = springOf(response, bounce)
+  const leaveSpring = springOf(leave, 0)
+  let active = followSpring
+
+  // Room from the box's centre to the edge of the viewport on the side `d` pixels away, as the box may sit off centre.
+  const room = (d: number, axis: 0 | 1) => Math.max(1, d >= 0 ? (axis ? windowHeight.value : windowWidth.value) - centre[axis] : centre[axis])
+
+  // How far the cursor, `dx` and `dy` pixels from the box's centre, is past the box, -1 to 1 at the edges. Measured along
+  // the line from the centre, rather than each way on its own, so the box only rests over itself and not in the bands
+  // level with it.
+  const pastZone = (dx: number, dy: number): Point => {
+    // How much of that line is over the box.
+    const over = Math.min(zone[0] / Math.abs(dx), zone[1] / Math.abs(dy))
+
+    if (!(dx || dy) || over >= 1) {
+      return [0, 0]
+    }
+
+    const past = (d: number, axis: 0 | 1) => Math.min(1, Math.max(-1, (d * (1 - over)) / Math.max(1, room(d, axis) - zone[axis])))
+
+    return [past(dx, 0), past(dy, 1)]
+  }
+
+  const moveTo = (dx: number, dy: number, using = followSpring) => {
+    pointer.splice(0, 4, dx / room(dx, 0), dy / room(dy, 1), ...pastZone(dx, dy))
+    active = using
     isSettled.value = false
   }
 
-  // A spring with unit mass, stiff enough to swing once every `response`, damped short of critical by `bounce`.
-  const stiffness = ((2 * Math.PI) / (response / 1000)) ** 2
-  const damping = 2 * (1 - bounce) * Math.sqrt(stiffness)
-
-  // Room from the box's centre to the edge of the viewport on the side of `position`, as the box may sit off centre.
-  const side = (position: number, from: number, size: number) => position >= 0 ? size - from : from
-
-  // How far `position` is past the resting area, -1 to 1 at the edges.
-  const pastZone = (position: number, from: number, size: number) => {
-    const room = side(position, from, size)
-
-    return (Math.sign(position) * Math.max(0, Math.abs(position) * room - zone)) / Math.max(1, room - zone)
-  }
-
   const spring = (delta: number) => {
-    // Small fixed steps keep the spring the same at any frame rate.
-    for (let left = delta / 1000; left > 0; left -= 1 / 120) {
-      const dt = Math.min(left, 1 / 120)
-
-      for (const i of [0, 1] as const) {
-        velocity[i] += ((pointer[i] - current[i]) * stiffness - velocity[i] * damping) * dt
+    steps(delta, (dt) => {
+      for (const i of [0, 1, 2, 3] as const) {
+        velocity[i] += ((pointer[i] - current[i]) * active.stiffness - velocity[i] * active.damping) * dt
         current[i] += velocity[i] * dt
       }
-    }
+    })
 
     // Close enough, and slow enough, that what remains is under a pixel.
-    if (([0, 1] as const).every(i => Math.abs(pointer[i] - current[i]) < 1e-3 && Math.abs(velocity[i]) < 1e-2)) {
-      current[0] = pointer[0]
-      current[1] = pointer[1]
-      velocity[0] = velocity[1] = 0
+    if (([0, 1, 2, 3] as const).every(i => Math.abs(pointer[i] - current[i]) < 1e-3 && Math.abs(velocity[i]) < 1e-2)) {
+      current.splice(0, 4, ...pointer)
+      velocity.fill(0)
       isSettled.value = true
     }
   }
@@ -344,8 +370,7 @@ export default function useBoxTurn(
 
   // Speed falls by e^(-decay * t), so it coasts `speed / decay` radians before stopping.
   const decay = Math.max(1e-3, -Math.log(1 - Math.min(friction, 0.999)))
-  const landStiffness = ((2 * Math.PI) / (landResponse / 1000)) ** 2
-  const landDamping = 2 * (1 - landBounce) * Math.sqrt(landStiffness)
+  const land = springOf(landResponse, landBounce)
   // Slow enough to cover no more than a quarter turn a swing, when the landing spring takes over.
   const landingSpeed = (Math.PI / 2) / (landResponse / 1000)
 
@@ -403,9 +428,7 @@ export default function useBoxTurn(
   const tumbling = (delta: number, around: Mat3) => {
     let target = IDENTITY
 
-    for (let left = delta / 1000; left > 0; left -= 1 / 120) {
-      const dt = Math.min(left, 1 / 120)
-
+    steps(delta, (dt) => {
       // Aims for the face it would have coasted to, so a flick never gets pulled back, but no more than a quarter turn
       // ahead, or the spring would take the short way round, backwards.
       const speed = Math.hypot(...spinVelocity)
@@ -422,14 +445,14 @@ export default function useBoxTurn(
         const handover = smoothstep(Math.min(1, landingTime / (landResponse / 1000)))
         target = multiply(multiply(around, landing), transpose(around))
         const error = toAxisAngle(multiply(target, transpose(tumble)))
-        spinVelocity.forEach((v, i) => spinVelocity[i] = v + (handover * (error[i]! * landStiffness - v * landDamping) - (1 - handover) * v * decay) * dt)
+        spinVelocity.forEach((v, i) => spinVelocity[i] = v + (handover * (error[i]! * land.stiffness - v * land.damping) - (1 - handover) * v * decay) * dt)
       }
       else {
         spinVelocity.forEach((v, i) => spinVelocity[i] = v * Math.exp(-decay * dt))
       }
 
       tumble = multiply(fromAxisAngle(spinVelocity.map(v => v * dt) as Vec3), tumble)
-    }
+    })
 
     // Landed on a face, which looks the same as no extra turn at all.
     if (landing && angleBetween(target, tumble) < 1e-3 && Math.hypot(...spinVelocity) < 1e-2) {
@@ -462,8 +485,7 @@ export default function useBoxTurn(
       spring(delta)
     }
 
-    const x = pastZone(current[0], centre[0], windowWidth.value)
-    const y = pastZone(current[1], centre[1], windowHeight.value)
+    const [, , x, y] = current
     const around = turn(x * turns[0] * Math.PI * 2, y * turns[1] * Math.PI * 2)
 
     if (isTumbling.value) {
@@ -473,7 +495,7 @@ export default function useBoxTurn(
     render(around, smoothstep(Math.min(1, Math.hypot(x, y) / reach)), [current[0], current[1]])
   }
 
-  // Without a cursor, spin a quarter or half turn every so often, mostly around and sometimes over. A cube looks the same
+  // Without a cursor, spin a quarter or three-quarter turn every so often, mostly around and sometimes over. A cube looks the same
   // every quarter turn, so it lands back on the resting shape without ever reversing. It lifts a little mid-spin, and the
   // image drifts the way the box is turning.
   const tiltRad = (tilt * Math.PI) / 180
@@ -484,11 +506,11 @@ export default function useBoxTurn(
   let delay = 0
 
   const { start: schedule, stop: unschedule } = useTimeoutFn(() => {
-    const isHalf = Math.random() < 0.35
+    const isLong = Math.random() < 0.35
     spin = {
       axis: Math.random() < 0.7 ? 0 : 1,
-      turn: (isHalf ? 0.5 : 0.25) * (Math.random() < 0.5 ? -1 : 1),
-      duration: duration * (isHalf ? 1.4 : 1),
+      turn: (isLong ? 0.75 : 0.25) * (Math.random() < 0.5 ? -1 : 1),
+      duration: duration * (isLong ? 1.7 : 1),
     }
     elapsed = 0
     isSpinning.value = true
@@ -558,8 +580,9 @@ export default function useBoxTurn(
     tumble = IDENTITY
     spinVelocity.fill(0)
     landing = undefined
-    current[0] = pointer[0] = velocity[0] = 0
-    current[1] = pointer[1] = velocity[1] = 0
+    pointer.fill(0)
+    current.fill(0)
+    velocity.fill(0)
     isSettled.value = true
     setClip(restClip)
     setDrift(0, 0)
@@ -574,12 +597,12 @@ export default function useBoxTurn(
     }
 
     const rect = target.value.getBoundingClientRect()
-    zone = rect.width / 2
-    centre[0] = rect.left + zone
-    centre[1] = rect.top + rect.height / 2
+    zone[0] = rect.width / 2
+    zone[1] = rect.height / 2
+    centre[0] = rect.left + zone[0]
+    centre[1] = rect.top + zone[1]
 
-    const toEdge = (at: number, from: number, size: number) => (at - from) / Math.max(1, side(at - from, from, size))
-    moveTo(toEdge(client[0], centre[0], windowWidth.value), toEdge(client[1], centre[1], windowHeight.value))
+    moveTo(client[0] - centre[0], client[1] - centre[1])
   }
 
   useEventListener('pointermove', (event: PointerEvent) => {
@@ -621,7 +644,7 @@ export default function useBoxTurn(
   useEventListener('pointerout', (event: PointerEvent) => {
     if (mode.value === 'follow' && !event.relatedTarget) {
       client = undefined
-      moveTo(0, 0)
+      moveTo(0, 0, leaveSpring)
     }
   }, { passive: true })
 
