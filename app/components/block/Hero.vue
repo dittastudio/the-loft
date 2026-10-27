@@ -30,7 +30,7 @@ const imageClip = useBoxTurn(cell, imageEl, {
   <div
     ref="container"
     v-editable="block"
-    class="block-hero relative grid min-h-svh py-36 overflow-hidden"
+    class="block-hero relative grid min-h-svh py-[calc(var(--app-gutter-outer)*4)] md:py-(--app-gutter-outer) overflow-hidden"
   >
     <div class="wrapper grid md:max-w-(--max-w) md:mx-auto grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] content-center gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0 md:grid-rows-[1fr_auto_1fr]">
       <h1 class="sr-only">The Loft EC1</h1>
