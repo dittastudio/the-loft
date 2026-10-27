@@ -26,8 +26,11 @@ export default function useBounce(
       return
     }
 
+    // The container can't shrink below its content, so cap to the viewport to keep the target on screen.
+    const height = Math.min(container.value.clientHeight, window.innerHeight)
+
     maxX = Math.max(0, container.value.clientWidth - target.value.offsetWidth)
-    maxY = Math.max(0, container.value.clientHeight - target.value.offsetHeight)
+    maxY = Math.max(0, height - target.value.offsetHeight)
     x = Math.min(x, maxX)
     y = Math.min(y, maxY)
   }
@@ -85,6 +88,8 @@ export default function useBounce(
       observer.observe(target.value)
     }
 
+    window.addEventListener('resize', measure)
+
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       frame = requestAnimationFrame(tick)
     }
@@ -93,6 +98,7 @@ export default function useBounce(
   onUnmounted(() => {
     cancelAnimationFrame(frame)
     observer?.disconnect()
+    window.removeEventListener('resize', measure)
   })
 
   return isReady

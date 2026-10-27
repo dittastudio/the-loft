@@ -46,8 +46,8 @@ const onIntent = (item: Item) => {
     aria-label="Main"
     class="fixed inset-x-0 top-0 z-10 pointer-events-none"
   >
-    <div class="wrapper flex justify-end pt-(--app-gutter-outer)">
-      <ul class="flex flex-col items-end pointer-events-auto font-sans text-right text-24 leading-tight lowercase">
+    <div class="wrapper pt-(--app-gutter-outer)">
+      <ul class="flex flex-row-reverse justify-between md:flex-col md:items-end pointer-events-auto font-sans text-right text-24 leading-tight lowercase">
         <li
           v-for="item in items"
           :key="item._uid"

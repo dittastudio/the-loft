@@ -33,7 +33,7 @@ const onClose = () => {
   open.value = false
 }
 
-// The dialog fills the viewport, so a click that lands on it directly (not its content) is a click on empty space.
+// The scroller fills the viewport, so a click that lands on it directly (not its content) is a click on empty space.
 const onClick = (event: MouseEvent) => {
   if (event.target === event.currentTarget) {
     open.value = false
@@ -48,10 +48,9 @@ const onClick = (event: MouseEvent) => {
     closedby="any"
     class="ui-modal"
     @close="onClose"
-    @click="onClick"
   >
-    <div class="ui-modal__header sticky top-0 z-1 pointer-events-none">
-      <div class="wrapper flex justify-between items-start pt-(--app-gutter-outer) font-sans text-24 leading-tight lowercase">
+    <div class="ui-modal__header absolute inset-x-0 top-0 z-1 pointer-events-none">
+      <div class="wrapper flex justify-between items-start py-(--app-gutter-outer) font-sans text-24 leading-tight lowercase">
         <div class="pointer-events-auto">
           <slot name="actions" />
         </div>
@@ -67,8 +66,13 @@ const onClick = (event: MouseEvent) => {
       </div>
     </div>
 
-    <div class="ui-modal__content">
-      <slot />
+    <div
+      class="ui-modal__scroller"
+      @click="onClick"
+    >
+      <div class="ui-modal__content pt-[calc(var(--app-gutter-outer)*2.2)]">
+        <slot />
+      </div>
     </div>
   </dialog>
 </template>
@@ -93,8 +97,7 @@ const onClick = (event: MouseEvent) => {
   border: 0;
   color: var(--color-black);
   background: transparent;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: hidden;
   /* Keeps the dialog in the top layer until the slowest exit (backdrop: 0.15s delay + 0.6s) has finished. */
   transition:
     overlay 0.75s allow-discrete,
@@ -112,19 +115,25 @@ const onClick = (event: MouseEvent) => {
     display 0.75s allow-discrete;
 }
 
+/*
+  The scroller is always exactly the viewport, so scaling it zooms whatever is on screen around the screen's centre,
+  however far down the pages have been scrolled. Scaling the (very tall) content instead would slide it at depth.
+*/
+.ui-modal__scroller {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scale: 0.99;
+  transition: scale 0.35s --theme(--ease-inOutSine);
+}
+
 .ui-modal__header,
 .ui-modal__content {
   opacity: 0;
   filter: blur(4px);
   transition:
     opacity 0.35s --theme(--ease-inOutSine),
-    filter 0.35s --theme(--ease-inOutSine),
-    scale 0.35s --theme(--ease-inOutSine);
-}
-
-.ui-modal__content {
-  scale: 0.99;
-  transform-origin: 50% 0;
+    filter 0.35s --theme(--ease-inOutSine);
 }
 
 .ui-modal[open]::backdrop {
@@ -135,6 +144,11 @@ const onClick = (event: MouseEvent) => {
     display 0.9s allow-discrete;
 }
 
+.ui-modal[open] .ui-modal__scroller {
+  scale: 1;
+  transition: scale 1.4s --theme(--ease-outQuint) 0.25s;
+}
+
 .ui-modal[open] .ui-modal__header,
 .ui-modal[open] .ui-modal__content {
   opacity: 1;
@@ -142,12 +156,7 @@ const onClick = (event: MouseEvent) => {
   filter: none;
   transition:
     opacity 1.1s --theme(--ease-outQuint) 0.25s,
-    filter 1.1s --theme(--ease-outQuint) 0.25s,
-    scale 1.4s --theme(--ease-outQuint) 0.25s;
-}
-
-.ui-modal[open] .ui-modal__content {
-  scale: 1;
+    filter 1.1s --theme(--ease-outQuint) 0.25s;
 }
 
 @starting-style {
@@ -161,7 +170,7 @@ const onClick = (event: MouseEvent) => {
     filter: blur(4px);
   }
 
-  .ui-modal[open] .ui-modal__content {
+  .ui-modal[open] .ui-modal__scroller {
     scale: 0.98;
   }
 }
@@ -173,8 +182,13 @@ const onClick = (event: MouseEvent) => {
   .ui-modal[open] .ui-modal__header,
   .ui-modal[open] .ui-modal__content {
     filter: none;
-    scale: none;
     transition: opacity 0.3s linear;
+  }
+
+  .ui-modal__scroller,
+  .ui-modal[open] .ui-modal__scroller {
+    scale: none;
+    transition: none;
   }
 
   .ui-modal::backdrop,
