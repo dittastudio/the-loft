@@ -9,17 +9,36 @@ const open = defineModel<boolean>('open', { default: false })
 
 const dialog = useTemplateRef('dialog')
 
-const sync = (value: boolean) => {
+/*
+  The exit runs while the dialog is still modal, and close() is only called once it has finished.
+  Safari doesn't support transitioning `overlay`, so closing first would drop the dialog and its ::backdrop
+  out of the top layer immediately and the exit would never be seen.
+*/
+const sync = async (value: boolean) => {
   const el = dialog.value
 
   if (!el) {
     return
   }
 
-  if (value && !el.open) {
-    el.showModal()
+  if (value) {
+    delete el.dataset.closing
+
+    if (!el.open) {
+      el.showModal()
+    }
   }
-  else if (!value && el.open) {
+  else if (el.open && !('closing' in el.dataset)) {
+    el.dataset.closing = ''
+
+    await Promise.allSettled(el.getAnimations({ subtree: true }).map(animation => animation.finished))
+
+    // Reopened mid-exit: the reverse transition has already taken over.
+    if (open.value) {
+      return
+    }
+
+    delete el.dataset.closing
     el.close()
   }
 }
@@ -30,6 +49,12 @@ onMounted(() => sync(open.value))
 
 // Fires for every close route: Esc, light dismiss, close button.
 const onClose = () => {
+  open.value = false
+}
+
+// Esc and light dismiss would close instantly; hold them and go through the animated exit instead.
+const onCancel = (event: Event) => {
+  event.preventDefault()
   open.value = false
 }
 
@@ -46,7 +71,9 @@ const onClick = (event: MouseEvent) => {
     ref="dialog"
     :aria-label="label"
     closedby="any"
+    autofocus
     class="ui-modal"
+    @cancel="onCancel"
     @close="onClose"
   >
     <div class="ui-modal__header absolute inset-x-0 top-0 z-1 pointer-events-none">
@@ -57,8 +84,7 @@ const onClick = (event: MouseEvent) => {
 
         <button
           type="button"
-          class="pointer-events-auto inline-flex items-center lowercase only-hover:hover:underline"
-          autofocus
+          class="pointer-events-auto inline-flex items-center lowercase transition-opacity duration-300 ease-out only-hover:hover:opacity-50"
           @click="open = false"
         >
           Close
@@ -83,7 +109,8 @@ const onClick = (event: MouseEvent) => {
 /*
   Enter: the frost settles first, then the header and pages come into focus (blur → sharp) a beat later.
   Exit: reversed and quicker, the content dissolves first and the frost lifts after it.
-  Transitions are taken from the state being entered, so delays live on [open] for enter and on the base rule for exit.
+  Transitions are taken from the state being entered, so delays live on the open state for enter and on the base rule for exit.
+  The open state excludes [data-closing] so the exit can play while the dialog is still in the top layer (see sync()).
 */
 .ui-modal {
   position: fixed;
@@ -98,10 +125,8 @@ const onClick = (event: MouseEvent) => {
   color: var(--color-black);
   background: transparent;
   overflow: hidden;
-  /* Keeps the dialog in the top layer until the slowest exit (backdrop: 0.15s delay + 0.6s) has finished. */
-  transition:
-    overlay 0.75s allow-discrete,
-    display 0.75s allow-discrete;
+  /* The dialog itself takes focus on open (so the close button doesn't show a ring); it needs no indicator of its own. */
+  outline: none;
 }
 
 .ui-modal::backdrop {
@@ -109,10 +134,7 @@ const onClick = (event: MouseEvent) => {
   background-color: rgb(255 255 255 / 80%);
   backdrop-filter: blur(12px);
   opacity: 0;
-  transition:
-    opacity 0.6s --theme(--ease-inOutSine) 0.15s,
-    overlay 0.75s allow-discrete,
-    display 0.75s allow-discrete;
+  transition: opacity 0.6s --theme(--ease-inOutSine) 0.15s;
 }
 
 /*
@@ -136,21 +158,18 @@ const onClick = (event: MouseEvent) => {
     filter 0.35s --theme(--ease-inOutSine);
 }
 
-.ui-modal[open]::backdrop {
+.ui-modal[open]:not([data-closing])::backdrop {
   opacity: 1;
-  transition:
-    opacity 0.9s --theme(--ease-outQuint),
-    overlay 0.9s allow-discrete,
-    display 0.9s allow-discrete;
+  transition: opacity 0.9s --theme(--ease-outQuint);
 }
 
-.ui-modal[open] .ui-modal__scroller {
+.ui-modal[open]:not([data-closing]) .ui-modal__scroller {
   scale: 1;
   transition: scale 1.4s --theme(--ease-outQuint) 0.25s;
 }
 
-.ui-modal[open] .ui-modal__header,
-.ui-modal[open] .ui-modal__content {
+.ui-modal[open]:not([data-closing]) .ui-modal__header,
+.ui-modal[open]:not([data-closing]) .ui-modal__content {
   opacity: 1;
   /* `none` rather than blur(0) so no filter layer sits over the pages while scrolling; it still interpolates. */
   filter: none;
@@ -159,18 +178,19 @@ const onClick = (event: MouseEvent) => {
     filter 1.1s --theme(--ease-outQuint) 0.25s;
 }
 
+/* Same selectors as the open state: @starting-style has no cascade priority, so it only wins on matching specificity. */
 @starting-style {
-  .ui-modal[open]::backdrop {
+  .ui-modal[open]:not([data-closing])::backdrop {
     opacity: 0;
   }
 
-  .ui-modal[open] .ui-modal__header,
-  .ui-modal[open] .ui-modal__content {
+  .ui-modal[open]:not([data-closing]) .ui-modal__header,
+  .ui-modal[open]:not([data-closing]) .ui-modal__content {
     opacity: 0;
     filter: blur(4px);
   }
 
-  .ui-modal[open] .ui-modal__scroller {
+  .ui-modal[open]:not([data-closing]) .ui-modal__scroller {
     scale: 0.95;
   }
 }
@@ -179,24 +199,21 @@ const onClick = (event: MouseEvent) => {
 @media (prefers-reduced-motion: reduce) {
   .ui-modal__header,
   .ui-modal__content,
-  .ui-modal[open] .ui-modal__header,
-  .ui-modal[open] .ui-modal__content {
+  .ui-modal[open]:not([data-closing]) .ui-modal__header,
+  .ui-modal[open]:not([data-closing]) .ui-modal__content {
     filter: none;
     transition: opacity 0.3s linear;
   }
 
   .ui-modal__scroller,
-  .ui-modal[open] .ui-modal__scroller {
+  .ui-modal[open]:not([data-closing]) .ui-modal__scroller {
     scale: none;
     transition: none;
   }
 
   .ui-modal::backdrop,
-  .ui-modal[open]::backdrop {
-    transition:
-      opacity 0.3s linear,
-      overlay 0.3s allow-discrete,
-      display 0.3s allow-discrete;
+  .ui-modal[open]:not([data-closing])::backdrop {
+    transition: opacity 0.3s linear;
   }
 }
 </style>
