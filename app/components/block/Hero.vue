@@ -12,6 +12,18 @@ const { block } = defineProps<Props>()
 const container = useTemplateRef('container')
 const collaboration = useTemplateRef('collaboration')
 const isBouncing = useBounce(collaboration, container, { speed: 100 })
+
+// The image is drawn larger than its cell so the turning box always stays over it, even as it drifts.
+const imageScale = 1.6
+const imageDrift = 0.06
+const cell = useTemplateRef('cell')
+const image = useTemplateRef('image')
+const imageEl = computed<HTMLElement | null>(() => image.value?.$el ?? null)
+const imageClip = useBoxTurn(cell, imageEl, {
+  shape: [[0.3, 0], [1, 0], [1, 1], [0, 1], [0, 0.18]],
+  scale: imageScale,
+  drift: imageDrift,
+})
 </script>
 
 <template>
@@ -28,18 +40,25 @@ const isBouncing = useBounce(collaboration, container, { speed: 100 })
         class="row-start-1 col-start-2 lg:col-start-1 col-end-[-1] justify-self-start w-(--the-loft-w) h-auto fill-current md:self-end md:mb-(--the-loft-o-offset)"
       />
 
-      <NuxtImg
+      <div
         v-if="block.image?.filename"
-        provider="storyblok"
-        :src="block.image.filename"
-        :alt="block.image.alt ?? ''"
-        :width="400"
-        :height="400"
-        format="webp"
-        sizes="sm:25vw md:12vw lg:9vw"
-        fetchpriority="high"
-        class="row-start-2 col-start-6 col-end-8 md:col-start-5 md:col-end-6 lg:col-start-4 lg:col-end-5 justify-self-center w-(--image-w) max-w-none aspect-square object-cover [clip-path:polygon(30%_0,100%_0,100%_100%,0_100%,0_18%)]"
-      />
+        ref="cell"
+        class="relative row-start-2 col-start-6 col-end-8 md:col-start-5 md:col-end-6 lg:col-start-4 lg:col-end-5 justify-self-center w-(--image-w) aspect-square"
+        :style="{ '--image-scale': imageScale, '--image-drift': imageDrift, 'clipPath': imageClip }"
+      >
+        <NuxtImg
+          ref="image"
+          provider="storyblok"
+          :src="block.image.filename"
+          :alt="block.image.alt ?? ''"
+          :width="688"
+          :height="688"
+          format="webp"
+          sizes="sm:43vw md:21vw lg:16vw"
+          fetchpriority="high"
+          class="absolute top-1/2 left-1/2 -translate-1/2 size-[calc((var(--image-scale)+2*var(--image-drift))*100%)] max-w-none object-cover will-change-transform"
+        />
+      </div>
 
       <Ec1Svg
         aria-hidden="true"

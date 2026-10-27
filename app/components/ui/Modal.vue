@@ -171,7 +171,7 @@ const onClick = (event: MouseEvent) => {
   }
 
   .ui-modal[open] .ui-modal__scroller {
-    scale: 0.98;
+    scale: 0.95;
   }
 }
 

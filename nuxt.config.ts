@@ -40,6 +40,7 @@ export default defineNuxtConfig({
     }],
     'nuxt-ai-ready',
     '@nuxt/fonts',
+    '@vueuse/nuxt',
   ],
   fonts: {
     families: [

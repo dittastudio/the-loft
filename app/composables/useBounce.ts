@@ -10,10 +10,8 @@ export default function useBounce(
   container: Ref<HTMLElement | null>,
   { speed = 60 }: BounceOptions = {},
 ) {
-  const isReady = ref<boolean>(false)
+  const isReady = shallowRef<boolean>(false)
 
-  let frame = 0
-  let lastTime = 0
   let x = 0
   let y = 0
   let vx = 0
@@ -41,13 +39,15 @@ export default function useBounce(
     }
   }
 
-  const tick = (time: number) => {
-    // Cap the step so returning to a background tab doesn't cause a jump.
-    const delta = Math.min((time - (lastTime || time)) / 1000, 0.05)
-    lastTime = time
+  const reducedMotion = usePreferredReducedMotion()
+  const isVisible = useElementVisibility(container)
 
-    x += vx * delta
-    y += vy * delta
+  const { pause, resume } = useRafFn(({ delta }) => {
+    // Cap the step so returning to a background tab doesn't cause a jump.
+    const step = Math.min(delta / 1000, 0.05)
+
+    x += vx * step
+    y += vy * step
 
     if (x <= 0 || x >= maxX) {
       vx *= -1
@@ -60,10 +60,13 @@ export default function useBounce(
     }
 
     render()
-    frame = requestAnimationFrame(tick)
-  }
+  }, { immediate: false })
 
-  let observer: ResizeObserver | undefined
+  // Hidden tabs get no frames anyway, so only being offscreen needs checking.
+  watch(() => isReady.value && isVisible.value && reducedMotion.value !== 'reduce', isRunning => isRunning ? resume() : pause())
+
+  useResizeObserver([container, target], measure)
+  useEventListener('resize', measure, { passive: true })
 
   onMounted(() => {
     measure()
@@ -77,28 +80,6 @@ export default function useBounce(
 
     render()
     isReady.value = true
-
-    observer = new ResizeObserver(measure)
-
-    if (container.value) {
-      observer.observe(container.value)
-    }
-
-    if (target.value) {
-      observer.observe(target.value)
-    }
-
-    window.addEventListener('resize', measure)
-
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      frame = requestAnimationFrame(tick)
-    }
-  })
-
-  onUnmounted(() => {
-    cancelAnimationFrame(frame)
-    observer?.disconnect()
-    window.removeEventListener('resize', measure)
   })
 
   return isReady
