@@ -77,14 +77,14 @@ const onClick = (event: MouseEvent) => {
     @close="onClose"
   >
     <div class="ui-modal__header absolute inset-x-0 top-0 z-1 pointer-events-none">
-      <div class="wrapper flex justify-between items-start py-(--app-gutter-outer) font-sans text-24 leading-tight lowercase">
-        <div class="pointer-events-auto">
+      <div class="wrapper flex justify-between items-start py-(--app-gutter-outer) font-sans text-24 leading-tight">
+        <div class="lowercase pointer-events-auto">
           <slot name="actions" />
         </div>
 
         <button
           type="button"
-          class="pointer-events-auto inline-flex items-center lowercase transition-opacity duration-300 ease-out only-hover:hover:opacity-50"
+          class="pointer-events-auto inline-block max-md:p-(--app-gutter-outer) max-md:-m-(--app-gutter-outer) lowercase transition-opacity duration-300 ease-out only-hover:hover:opacity-50"
           @click="open = false"
         >
           Close

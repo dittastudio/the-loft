@@ -56,7 +56,7 @@ const onIntent = (item: Item) => {
           <!-- 44px tap target on touch-sized layouts; tight stack from md as per design. -->
           <StoryblokLink
             :item="item.link"
-            class="inline-flex items-center transition-opacity duration-300 ease-out only-hover:hover:opacity-50"
+            class="inline-block max-md:p-(--app-gutter-outer) max-md:-m-(--app-gutter-outer) transition-opacity duration-300 ease-out only-hover:hover:opacity-50"
             @click="onClick($event, item)"
             @pointerenter="onIntent(item)"
             @focus="onIntent(item)"
@@ -78,7 +78,7 @@ const onIntent = (item: Item) => {
         :href="pdf.src"
         target="_blank"
         download
-        class="inline-flex items-center transition-opacity duration-300 ease-out only-hover:hover:opacity-50"
+        class="inline-block max-md:p-(--app-gutter-outer) max-md:-m-(--app-gutter-outer) transition-opacity duration-300 ease-out only-hover:hover:opacity-50"
       >
         Download
       </a>
