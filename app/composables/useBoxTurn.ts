@@ -26,13 +26,23 @@ interface BoxTurnOptions {
   bounce?: number // how far the spring following the cursor overshoots, 0 for none
   leave?: number // ms the spring easing it back once the cursor leaves the window takes to swing once, which never overshoots
   duration?: number // ms a quarter spin takes, without a cursor
-  tilt?: number // degrees the box lifts mid-spin, without a cursor
-  rest?: Point // shortest and longest ms between spins, without a cursor
+  rest?: number // ms between spins, without a cursor
   scroll?: ScrollOptions // how the box tumbles the way the page is scrolled
+  surface?: Ref<HTMLElement | null> // where a sideways swipe can grab it by touch, as well as the box itself
 }
 
 const CENTRE: Point = [0.5, 0.5]
 const SAMPLES = 96
+const GRAB_SLOP = 4 // px a press moves before it's a drag rather than a poke
+const GRAB_SMOOTHING = 0.05 // seconds the speed of a held box takes to catch up with the pointer
+const POKE_CENTRE = 0.2 // how near the centre, as a fraction of the way to the edge, a poke goes a random way
+const FIRST_SPIN = 1200 // ms before the first spin, without a cursor
+const SPIN_NEAR = 0.25 // radians from a face a click can still spin the box rather than poke it
+const SETTLE = 700 // ms the spring easing a cancelled spin back to rest takes to swing once
+
+// The ways the front sweeps on each spin in turn, as which way it goes around and over: top right to bottom left, bottom
+// right to top left, bottom left to top right, then top left to bottom right.
+const DIAGONALS: Point[] = [[-1, 1], [-1, -1], [1, -1], [1, 1]]
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
@@ -117,18 +127,29 @@ const fromAxisAngle = ([x, y, z]: Vec3): Mat3 => {
   ]
 }
 
-// The other way, for turns short of a half, which is all landing on the nearest face ever needs.
+// The other way, up to a half turn either way round.
 const toAxisAngle = (m: Mat3): Vec3 => {
   const angle = Math.acos(Math.min(1, Math.max(-1, (m[0] + m[4] + m[8] - 1) / 2)))
-  const s = Math.sin(angle)
+  const twist: Vec3 = [m[7] - m[5], m[2] - m[6], m[3] - m[1]]
 
-  if (s < 1e-9) {
+  if (angle < 1e-9) {
     return [0, 0, 0]
   }
 
-  const k = angle / (2 * s)
+  // Near a half turn the twist all but vanishes, so the axis comes from the biggest column of `m` plus the identity
+  // instead, which is twice the axis times its own length along it, turned whichever way the twist still leans.
+  if (Math.PI - angle < 1e-3) {
+    const j = [m[0], m[4], m[8]].indexOf(Math.max(m[0], m[4], m[8]))
+    const axis = [0, 1, 2].map(i => m[i * 3 + j]! + (i === j ? 1 : 0))
+    const length = Math.hypot(...axis)
+    const sign = axis.reduce((sum, v, i) => sum + v * twist[i]!, 0) < 0 ? -1 : 1
 
-  return [(m[7] - m[5]) * k, (m[2] - m[6]) * k, (m[3] - m[1]) * k]
+    return axis.map(v => (v / length) * angle * sign) as Vec3
+  }
+
+  const k = angle / (2 * Math.sin(angle))
+
+  return twist.map(v => v * k) as Vec3
 }
 
 const angleBetween = (a: Mat3, b: Mat3) => Math.hypot(...toAxisAngle(multiply(a, transpose(b))))
@@ -226,16 +247,15 @@ const steps = (delta: number, step: (dt: number) => void) => {
 }
 
 const range = (from: number, to: number, count: number) => Array.from({ length: count + 1 }, (_, i) => from + ((to - from) * i) / count)
-const random = ([min, max]: Point) => min + Math.random() * (max - min)
 
 // Turns the outline of a 3D box inside `target`'s clip-path, resting on `shape`, over an `image` that overflows it, and
 // springs it towards the cursor. The box rests while the cursor is over it, wherever it sits in the viewport, and the image
 // drifts under it. Without a cursor it spins every so often instead. Either way, scrolling or swiping throws it into a
-// tumble.
+// tumble, and it can be grabbed and spun by hand, by touch with a sideways swipe across `surface`, or poked with a click.
 export default function useBoxTurn(
   target: Ref<HTMLElement | null>,
   image: Ref<HTMLElement | null>,
-  { shape, scale = 1.6, drift = 0.06, distance = 4, turns = [0.5, 0.5], reach = 0.2, response = 500, bounce = 0.3, leave = 1800, duration = 1700, tilt = 12, rest = [3000, 6000], scroll = {} }: BoxTurnOptions,
+  { shape, scale = 1.6, drift = 0.06, distance = 4, turns = [0.5, 0.5], reach = 0.2, response = 500, bounce = 0.3, leave = 1800, duration = 1200, rest = 4500, scroll = {}, surface = target }: BoxTurnOptions,
 ) {
   // Cell units to a percentage of the cell, reaching outside it as the box turns.
   const toClipPath = (points: Point[]) => `polygon(${points
@@ -332,8 +352,10 @@ export default function useBoxTurn(
     return [past(dx, 0), past(dy, 1)]
   }
 
+  // Capped at the edges, as a held pointer can be dragged out past them.
   const moveTo = (dx: number, dy: number, using = followSpring) => {
-    pointer.splice(0, 4, dx / room(dx, 0), dy / room(dy, 1), ...pastZone(dx, dy))
+    const toEdge = (d: number, axis: 0 | 1) => Math.min(1, Math.max(-1, d / room(d, axis)))
+    pointer.splice(0, 4, toEdge(dx, 0), toEdge(dy, 1), ...pastZone(dx, dy))
     active = using
     isSettled.value = false
   }
@@ -381,6 +403,9 @@ export default function useBoxTurn(
   let landingTime = 0
   const isTumbling = shallowRef(false)
 
+  // The pointer holding the box, where it's been, and how far it's turned the box since the last frame.
+  let grab: { id: number, start: Point, last: Point, rect: DOMRect, isOnBox: boolean, moved: boolean, turned: Vec3 } | undefined
+
   // The symmetry that, around `around`, is closest to `orientation`.
   const nearest = (orientation: Mat3, around: Mat3) => {
     let best = IDENTITY
@@ -398,34 +423,58 @@ export default function useBoxTurn(
     return { symmetry: best, angle: bestAngle }
   }
 
-  const throwBox = (dx: number, dy: number, turnsPer1000 = sensitivity) => {
-    if (!mode.value || !isVisible.value) {
-      return
-    }
+  // How the box is turned to the cursor.
+  const facing = () => turn(current[2] * turns[0] * Math.PI * 2, current[3] * turns[1] * Math.PI * 2)
 
-    // A spin in progress hands over where it's got to, so the throw carries on from there.
+  // A spin in progress hands over where it's got to, so a throw or a grab carries on from there. It spins the box on its
+  // own axes, under its turn to the cursor, where a tumble turns it on the screen's, over it.
+  const takeOver = () => {
     if (isSpinning.value) {
-      tumble = spinPose
+      const around = facing()
+      tumble = multiply(tumble, multiply(multiply(around, spinPose), transpose(around)))
       isSpinning.value = false
       unschedule()
     }
+  }
 
-    const gain = (decay * turnsPer1000 * Math.PI * 2) / 1000
-    spinVelocity[0] -= dy * gain
-    spinVelocity[1] -= dx * gain
-
+  const capSpeed = () => {
     const speed = Math.hypot(...spinVelocity)
     const cap = maxSpeed * Math.PI * 2
 
     if (speed > cap) {
       spinVelocity.forEach((v, i) => spinVelocity[i] = (v / speed) * cap)
     }
+  }
+
+  const throwBox = (dx: number, dy: number, turnsPer1000 = sensitivity) => {
+    if (!mode.value || !isVisible.value || grab) {
+      return
+    }
+
+    takeOver()
+
+    const gain = (decay * turnsPer1000 * Math.PI * 2) / 1000
+    spinVelocity[0] -= dy * gain
+    spinVelocity[1] -= dx * gain
+    capSpeed()
 
     landing = undefined
     isTumbling.value = true
   }
 
   const tumbling = (delta: number, around: Mat3) => {
+    // Held, it only turns with the pointer. Its speed follows the pointer's, smoothed over `GRAB_SMOOTHING`, so letting go
+    // throws it as fast as it was going and holding still lets it go limp.
+    if (grab) {
+      const { turned } = grab
+      const t = delta / 1000
+      const k = 1 - Math.exp(-t / GRAB_SMOOTHING)
+      spinVelocity.forEach((v, i) => spinVelocity[i] = v + (turned[i]! / Math.max(t, 1e-3) - v) * k)
+      turned.fill(0)
+
+      return
+    }
+
     let target = IDENTITY
 
     steps(delta, (dt) => {
@@ -466,9 +515,17 @@ export default function useBoxTurn(
   // Shows the box tumbling on top of `around`, blending in the resting shape from `w` as it nears a face, and drags the
   // image the way it's spinning on top of `[x, y]`.
   const render = (around: Mat3, w: number, [x, y]: Point) => {
+    if (isSpinning.value) {
+      around = multiply(around, spinPose)
+      w = Math.max(w, spinMorph)
+      x = Math.min(1, Math.max(-1, x + spinArc * 0.5 * spin[0]))
+      y = Math.min(1, Math.max(-1, y + spinArc * 0.5 * spin[1]))
+    }
+
     if (isTumbling.value) {
+      // Held still off a face it keeps its turned outline, rather than easing back as a slowing tumble would.
       const near = nearest(tumble, around).angle / (Math.PI / 2)
-      w = Math.max(w, smoothstep(Math.min(1, near / morph, Math.hypot(...spinVelocity) / landingSpeed)))
+      w = Math.max(w, smoothstep(Math.min(1, near / morph, grab ? 1 : Math.hypot(...spinVelocity) / landingSpeed)))
 
       const pull = (v: number) => Math.tanh(v / (Math.PI * 2)) * scrollDrift
       x = Math.min(1, Math.max(-1, x + pull(spinVelocity[1])))
@@ -486,7 +543,7 @@ export default function useBoxTurn(
     }
 
     const [, , x, y] = current
-    const around = turn(x * turns[0] * Math.PI * 2, y * turns[1] * Math.PI * 2)
+    const around = facing()
 
     if (isTumbling.value) {
       tumbling(delta, around)
@@ -495,79 +552,122 @@ export default function useBoxTurn(
     render(around, smoothstep(Math.min(1, Math.hypot(x, y) / reach)), [current[0], current[1]])
   }
 
-  // Without a cursor, spin a quarter or three-quarter turn every so often, mostly around and sometimes over. A cube looks the same
-  // every quarter turn, so it lands back on the resting shape without ever reversing. It lifts a little mid-spin, and the
-  // image drifts the way the box is turning.
-  const tiltRad = (tilt * Math.PI) / 180
+  // Without a cursor, spin a three-quarter turn every so often, and with one, whenever the box is clicked. Every spin goes
+  // diagonally, around and over at once, the next way in `DIAGONALS`, so the front sweeps from one corner to the other. A
+  // cube looks the same every quarter turn, so it lands back on the resting shape without ever reversing, and the image
+  // drifts the way the box is turning.
   const isSpinning = shallowRef(false)
-  let spin = { axis: 0, turn: 0, duration: 0 }
+  let spin = DIAGONALS[0]!
+  let nextSpin = 0
   let spinPose = IDENTITY
+  let spinArc = 0 // how far through, from 0 at either end to 1 halfway
+  let spinMorph = 0 // how far from the resting shape
   let elapsed = 0
-  let delay = 0
+  let delay = FIRST_SPIN
+  let progress = 0
+  let settle: { to: number, speed: number } | undefined // cancelled, springing back to rest from `progress`
 
-  const { start: schedule, stop: unschedule } = useTimeoutFn(() => {
-    const isLong = Math.random() < 0.35
-    spin = {
-      axis: Math.random() < 0.7 ? 0 : 1,
-      turn: (isLong ? 0.75 : 0.25) * (Math.random() < 0.5 ? -1 : 1),
-      duration: duration * (isLong ? 1.7 : 1),
-    }
+  // No overshoot, so it never swings past either end of the spin.
+  const settleSpring = springOf(SETTLE, 0)
+
+  const startSpin = () => {
+    spin = DIAGONALS[nextSpin]!
+    nextSpin = (nextSpin + 1) % DIAGONALS.length
     elapsed = 0
+    settle = undefined
     isSpinning.value = true
-  }, () => delay, { immediate: false })
+  }
+
+  // Cancelled mid-spin, it springs to whichever end is nearer, as both rest on the same shape, carrying on at the speed
+  // it was going so it never jerks to a stop.
+  const cancelSpin = () => {
+    if (!isSpinning.value || settle) {
+      return
+    }
+
+    const t = elapsed / (duration * 1.7)
+    const speed = ((easeSpin(Math.min(1, t + 1e-3)) - easeSpin(t)) / 1e-3) / ((duration * 1.7) / 1000)
+    settle = { to: progress < 0.5 ? 0 : 1, speed }
+  }
+
+  const { start: schedule, stop: unschedule } = useTimeoutFn(startSpin, () => delay, { immediate: false })
 
   const spinning = (delta: number) => {
-    elapsed += delta
+    let isDone: boolean
 
-    const t = Math.min(1, elapsed / spin.duration)
-    const progress = easeSpin(t)
-    const along = progress * spin.turn * Math.PI * 2
-    const arc = Math.sin(Math.PI * progress)
-    const lift = arc * tiltRad * Math.sign(spin.turn)
-    const w = smoothstep(Math.min(1, progress / 0.2, (1 - progress) / 0.2))
-    spinPose = spin.axis ? turn(lift, along) : turn(along, Math.abs(lift))
-    setClip(blendClip(() => getBox()(spinPose), w))
+    if (settle) {
+      const { to } = settle
+      steps(delta, (dt) => {
+        settle!.speed += ((to - progress) * settleSpring.stiffness - settle!.speed * settleSpring.damping) * dt
+        progress += settle!.speed * dt
 
-    const sway = arc * 0.5 * Math.sign(spin.turn)
-    setDrift(spin.axis ? 0 : sway, spin.axis ? sway : 0)
+        // Stopped at either end, as going past would turn it beyond where it rests.
+        if (progress < 0 || progress > 1) {
+          progress = Math.min(1, Math.max(0, progress))
+          settle!.speed = 0
+        }
+      })
+      isDone = Math.abs(to - progress) < 1e-3 && Math.abs(settle.speed) < 1e-2
 
-    if (t >= 1) {
-      setClip(restClip)
-      setDrift(0, 0)
+      if (isDone) {
+        progress = to
+      }
+    }
+    else {
+      elapsed += delta
+      const t = Math.min(1, elapsed / (duration * 1.7))
+      progress = easeSpin(t)
+      isDone = t >= 1
+    }
+
+    const angle = progress * 0.75 * Math.PI * 2
+    spinPose = turn(spin[0] * angle, spin[1] * angle)
+    spinArc = isDone ? 0 : Math.max(0, Math.sin(Math.PI * progress))
+    spinMorph = smoothstep(Math.max(0, Math.min(1, progress / 0.2, (1 - progress) / 0.2)))
+
+    if (isDone) {
       isSpinning.value = false
-      delay = random(rest)
-      schedule()
+      settle = undefined
+
+      if (mode.value === 'autoplay') {
+        delay = rest
+        schedule()
+      }
     }
   }
 
-  // Start after a short random wait, so it doesn't look scripted. A spin cut short by scrolling away finishes first.
+  // Start after a short wait. A spin cut short by scrolling away finishes first, and the next one carries on the sequence.
   watch(() => mode.value === 'autoplay' && isVisible.value && !isTumbling.value, (isPlaying) => {
     if (!isPlaying) {
       unschedule()
     }
     else if (!isSpinning.value) {
-      delay = random([800, 2000])
+      delay = FIRST_SPIN
       schedule()
     }
   })
 
   // Hidden tabs get no frames anyway, so only being offscreen needs checking. Otherwise frames only run while the spring
   // is settling or the box is spinning or tumbling.
-  const canRun = computed(() => isVisible.value && (isTumbling.value || (mode.value === 'follow' ? !isSettled.value : isSpinning.value)))
+  const canRun = computed(() => isVisible.value && (isTumbling.value || isSpinning.value || (mode.value === 'follow' && !isSettled.value)))
 
   const { pause, resume } = useRafFn(({ delta }) => {
     // Cap the step so returning to a background tab doesn't cause a jump.
     const step = Math.min(delta, 50)
 
+    if (isSpinning.value) {
+      spinning(step)
+    }
+
     if (mode.value === 'follow') {
       following(step)
     }
-    else if (isTumbling.value) {
-      tumbling(step, IDENTITY)
-      render(IDENTITY, 0, [0, 0])
-    }
     else {
-      spinning(step)
+      if (isTumbling.value) {
+        tumbling(step, IDENTITY)
+      }
+
+      render(IDENTITY, 0, [0, 0])
     }
   }, { immediate: false })
 
@@ -580,6 +680,7 @@ export default function useBoxTurn(
     tumble = IDENTITY
     spinVelocity.fill(0)
     landing = undefined
+    grab = undefined
     pointer.fill(0)
     current.fill(0)
     velocity.fill(0)
@@ -591,8 +692,9 @@ export default function useBoxTurn(
   // Last cursor position, so scrolling the box under a still cursor counts too.
   let client: Point | undefined
 
+  // Held, the box stays turned to wherever the cursor was when it was grabbed.
   const follow = () => {
-    if (mode.value !== 'follow' || !client || !target.value) {
+    if (mode.value !== 'follow' || !client || !target.value || grab) {
       return
     }
 
@@ -607,6 +709,12 @@ export default function useBoxTurn(
 
   useEventListener('pointermove', (event: PointerEvent) => {
     client = [event.clientX, event.clientY]
+
+    // Let go somewhere the release never arrived, like outside the window.
+    if (grab && event.pointerId === grab.id && !(event.buttons & 1)) {
+      release(event, 'lost')
+    }
+
     follow()
   }, { passive: true })
 
@@ -634,7 +742,7 @@ export default function useBoxTurn(
   useEventListener('touchmove', (event: TouchEvent) => {
     const finger = event.touches[0]
 
-    if (mode.value === 'autoplay' && touch && finger) {
+    if (mode.value === 'autoplay' && touch && finger && !grab) {
       throwBox(touch[0] - finger.clientX, touch[1] - finger.clientY, swipeSensitivity)
       touch = [finger.clientX, finger.clientY]
     }
@@ -642,11 +750,170 @@ export default function useBoxTurn(
 
   // Leaving the window, which is the only time there's nothing on the other side.
   useEventListener('pointerout', (event: PointerEvent) => {
-    if (mode.value === 'follow' && !event.relatedTarget) {
+    if (mode.value === 'follow' && !event.relatedTarget && !grab) {
       client = undefined
       moveTo(0, 0, leaveSpring)
     }
   }, { passive: true })
+
+  // Grabbing the box stops it dead, and it turns with the pointer as if its front were stuck to it, a quarter turn for
+  // every width dragged. Only sideways drags grab it by touch, so the page still scrolls, and they can start anywhere on
+  // `surface`, not just the box, as there's nothing else for them to do. A click on the box without a drag spins it,
+  // or, from a tap or mid-tumble, pokes it instead, rolling it a quarter turn away the way a real box would go, around a
+  // random way if it's hit dead centre.
+  const startGrab = (event: PointerEvent, start: Point, isOnBox: boolean) => {
+    if (!target.value) {
+      return
+    }
+
+    takeOver()
+    grab = {
+      id: event.pointerId,
+      start,
+      last: start,
+      rect: target.value.getBoundingClientRect(),
+      isOnBox,
+      moved: false,
+      turned: [0, 0, 0],
+    }
+    spinVelocity.fill(0)
+    landing = undefined
+    isTumbling.value = true
+  }
+
+  const canGrab = (event: PointerEvent) => mode.value && isVisible.value && event.isPrimary && event.button === 0 && !grab
+
+  useEventListener(target, 'pointerdown', (event: PointerEvent) => {
+    if (!canGrab(event) || !target.value) {
+      return
+    }
+
+    // Kept from the surface, which this would otherwise bubble up to.
+    pending = undefined
+
+    if (event.pointerType === 'mouse') {
+      event.preventDefault()
+    }
+
+    // Held outside the window too.
+    target.value.setPointerCapture(event.pointerId)
+
+    // Mid-spin, a click cancels it, so it only takes the box once it's dragged.
+    if (event.pointerType === 'mouse' && isSpinning.value) {
+      pending = { id: event.pointerId, start: [event.clientX, event.clientY] }
+
+      return
+    }
+
+    target.value.style.cursor = 'grabbing'
+    startGrab(event, [event.clientX, event.clientY], true)
+  })
+
+  // Off the box, a touch only takes it once it's moved, as the browser cancels it first if it's a scroll, which then
+  // leaves the box spinning.
+  let pending: { id: number, start: Point } | undefined
+
+  useEventListener(surface, 'pointerdown', (event: PointerEvent) => {
+    if (canGrab(event) && event.pointerType !== 'mouse' && !target.value?.contains(event.target as Node | null)) {
+      pending = { id: event.pointerId, start: [event.clientX, event.clientY] }
+    }
+  })
+
+  useEventListener('pointermove', (event: PointerEvent) => {
+    if (pending?.id === event.pointerId && Math.hypot(event.clientX - pending.start[0], event.clientY - pending.start[1]) >= GRAB_SLOP) {
+      startGrab(event, pending.start, false)
+      pending = undefined
+    }
+
+    if (!grab || event.pointerId !== grab.id) {
+      return
+    }
+
+    if (!grab.moved && Math.hypot(event.clientX - grab.start[0], event.clientY - grab.start[1]) < GRAB_SLOP) {
+      return
+    }
+
+    // Down rolls the front down and right turns it right, the other way to a scroll, which moves the page the other way.
+    const gain = (Math.PI / 2) / Math.max(1, grab.rect.width)
+    const turned: Vec3 = [(event.clientY - grab.last[1]) * gain, (event.clientX - grab.last[0]) * gain, 0]
+    tumble = multiply(fromAxisAngle(turned), tumble)
+    grab.turned = grab.turned.map((v, i) => v + turned[i]!) as Vec3
+    grab.last = [event.clientX, event.clientY]
+    grab.moved = true
+  }, { passive: true })
+
+  // Let go with a release, a cancel when the browser takes over, or the pointer lost some other way, whose position can't
+  // be trusted, so it's only ever thrown and never pokes.
+  const release = (event: PointerEvent, how: 'up' | 'cancel' | 'lost' = 'up') => {
+    if (pending?.id === event.pointerId) {
+      if (how === 'up' && event.pointerType === 'mouse') {
+        cancelSpin()
+      }
+
+      pending = undefined
+    }
+
+    if (!grab || event.pointerId !== grab.id) {
+      return
+    }
+
+    const { moved, rect, isOnBox } = grab
+    const [x, y] = how === 'lost' ? (client ?? grab.last) : [event.clientX, event.clientY]
+    grab = undefined
+
+    if (target.value) {
+      target.value.style.cursor = ''
+    }
+
+    if (how === 'cancel') {
+      spinVelocity.fill(0)
+    }
+    // Clicked at rest, or all but landed after a throw, it spins the next way, as it does without a cursor. Any face looks
+    // the same at rest, so the face it's nearly on becomes the front, and what's left of the landing settles under the spin.
+    else if (!moved && how === 'up' && isOnBox && event.pointerType === 'mouse' && nearest(tumble, facing()).angle < SPIN_NEAR) {
+      const around = facing()
+      const face = multiply(multiply(around, nearest(tumble, around).symmetry), transpose(around))
+      tumble = multiply(tumble, transpose(face))
+
+      if (angleBetween(tumble, IDENTITY) < 1e-3) {
+        tumble = IDENTITY
+        isTumbling.value = false
+      }
+
+      startSpin()
+    }
+    else if (!moved && how === 'up' && isOnBox) {
+      // The front rolls the way the poked edge does as it's pushed away, so from the centre out to where it was poked.
+      const px = (x - (rect.left + rect.width / 2)) / Math.max(1, rect.width / 2)
+      const py = (y - (rect.top + rect.height / 2)) / Math.max(1, rect.height / 2)
+      const off = Math.hypot(px, py)
+      const way: Point = off < POKE_CENTRE
+        ? (Math.random() < 0.5 ? [Math.sign(Math.random() - 0.5), 0] : [0, Math.sign(Math.random() - 0.5)])
+        : [py / off, px / off]
+      // Fast enough to coast a quarter turn before it lands.
+      const speed = (Math.PI / 2) * decay
+      spinVelocity.splice(0, 3, way[0] * speed, way[1] * speed, 0)
+    }
+
+    capSpeed()
+    landing = undefined
+
+    // Dragged out of the window, it's let go as if the cursor had just left, which it did while held.
+    if (mode.value === 'follow' && (x < 0 || y < 0 || x >= windowWidth.value || y >= windowHeight.value)) {
+      client = undefined
+      moveTo(0, 0, leaveSpring)
+    }
+    else {
+      follow()
+    }
+  }
+
+  // Listened for on the window, whatever was grabbed. A cancel is the browser taking over to scroll the page, which
+  // throws it on its own. A lost capture is it gone without a release, which some browsers do when it's let go outside
+  // the window, and is a no-op after one.
+  useEventListener('pointerup', (event: PointerEvent) => release(event), { passive: true })
+  useEventListener('pointercancel', (event: PointerEvent) => release(event, 'cancel'), { passive: true })
+  useEventListener('lostpointercapture', (event: PointerEvent) => release(event, 'lost'), { passive: true })
 
   return restClip
 }

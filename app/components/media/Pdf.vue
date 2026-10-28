@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
         :style="{ aspectRatio: `${page.width} / ${page.height}` }"
         :alt="`Page ${index + 1} of ${pages.length}`"
         decoding="async"
-        class="block w-full h-auto opacity-0 blur-sm transition-[opacity,filter] duration-1000 ease-outQuint data-rendered:opacity-100 data-rendered:blur-none motion-reduce:blur-none motion-reduce:duration-300"
+        class="block w-full h-auto opacity-0 blur-sm transition-[opacity,filter] duration-1000 ease-outQuint data-rendered:opacity-100 data-rendered:blur-none motion-reduce:blur-none motion-reduce:duration-300 outline outline-current/20 rounded-[2px]"
       >
     </div>
   </div>

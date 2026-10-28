@@ -19,7 +19,7 @@
   --color-\*: initial;
   --color-white: hsla(0, 0%, 100%, 1);
   --color-black: hsla(0, 0%, 0%, 1);
-  --color-brand: oklch(40.8% 0.132 266.12); /* #284390 */
+  --color-brand: oklch(40.8% 0.131 266.5); /* #294390 */
   --color-grey: oklch(75.8% 0.008 186.82); /* #abb2b1 */
 
   --breakpoint-\*: initial;
@@ -42,6 +42,7 @@
 
   --text-\*: initial;
   --text-16: 1rem; /* 16px */
+  --text-20: 1.25rem; /* 20px */
   --text-24: 1.5rem; /* 24px */
 
   --ease-inQuad: cubic-bezier(0.55, 0.085, 0.68, 0.53);

@@ -77,7 +77,7 @@ const onClick = (event: MouseEvent) => {
     @close="onClose"
   >
     <div class="ui-modal__header absolute inset-x-0 top-0 z-1 pointer-events-none">
-      <div class="wrapper flex justify-between items-start py-(--app-gutter-outer) font-sans text-24 leading-tight">
+      <div class="wrapper flex justify-between items-start py-(--app-gutter-outer) font-sans text-20 leading-tight">
         <div class="lowercase pointer-events-auto">
           <slot name="actions" />
         </div>
@@ -131,7 +131,7 @@ const onClick = (event: MouseEvent) => {
 
 .ui-modal::backdrop {
   /* The frost itself never changes; only its opacity animates, which stays on the compositor. */
-  background-color: rgb(255 255 255 / 80%);
+  background-color: --alpha(var(--color-white) / 100%);
   backdrop-filter: blur(12px);
   opacity: 0;
   transition: opacity 0.6s --theme(--ease-inOutSine) 0.15s;

@@ -23,6 +23,7 @@ const imageClip = useBoxTurn(cell, imageEl, {
   shape: [[0.3, 0], [1, 0], [1, 1], [0, 1], [0, 0.18]],
   scale: imageScale,
   drift: imageDrift,
+  surface: container,
 })
 </script>
 
@@ -30,7 +31,7 @@ const imageClip = useBoxTurn(cell, imageEl, {
   <div
     ref="container"
     v-editable="block"
-    class="block-hero relative grid min-h-svh py-[calc(var(--app-gutter-outer)*4)] md:py-(--app-gutter-outer) overflow-hidden"
+    class="block-hero relative grid min-h-svh motion-safe:touch-pan-y motion-safe:touch-pinch-zoom py-[calc(var(--app-gutter-outer)*4)] md:py-(--app-gutter-outer) overflow-hidden"
   >
     <div class="wrapper grid md:max-w-(--max-w) md:mx-auto grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] content-center gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0 md:grid-rows-[1fr_auto_1fr]">
       <h1 class="sr-only">The Loft EC1</h1>
@@ -43,7 +44,7 @@ const imageClip = useBoxTurn(cell, imageEl, {
       <div
         v-if="block.image?.filename"
         ref="cell"
-        class="relative row-start-2 col-start-6 col-end-8 md:col-start-5 md:col-end-6 lg:col-start-4 lg:col-end-5 justify-self-center w-(--image-w) aspect-square"
+        class="relative row-start-2 col-start-6 col-end-8 md:col-start-5 md:col-end-6 lg:col-start-4 lg:col-end-5 justify-self-center w-(--image-w) aspect-square select-none motion-safe:touch-pan-y motion-safe:touch-pinch-zoom motion-safe:pointer-fine:cursor-grab"
         :style="{ '--image-scale': imageScale, '--image-drift': imageDrift, 'clipPath': imageClip }"
       >
         <NuxtImg
@@ -54,8 +55,9 @@ const imageClip = useBoxTurn(cell, imageEl, {
           :width="688"
           :height="688"
           format="webp"
-          sizes="sm:43vw md:21vw lg:16vw"
+          sizes="sm:43vw md:27vw lg:20vw"
           fetchpriority="high"
+          draggable="false"
           class="absolute top-1/2 left-1/2 -translate-1/2 size-[calc((var(--image-scale)+2*var(--image-drift))*100%)] max-w-none object-cover will-change-transform"
         />
       </div>
@@ -100,10 +102,10 @@ const imageClip = useBoxTurn(cell, imageEl, {
   --image-w: min(100%, 130px);
 
   @variant md {
-    --the-loft-w: calc(105 * var(--fluid-px));
+    --the-loft-w: calc(131.25 * var(--fluid-px));
     --ec1-offset: calc(80 * var(--fluid-px));
     /* The image sits in the single middle column of the 7-column grid. */
-    --image-w: calc(100% + 2 * var(--app-gutter-inner));
+    --image-w: calc((100% + 2 * var(--app-gutter-inner)) * 1.25);
     /* The composition is capped to a centred box spanning site columns 3-9 at 1440 (874px of content), re-gridded into 7 columns. */
     --app-columns: 7;
     --max-w: calc(874 * var(--fluid-px) + 2 * var(--app-gutter-outer));

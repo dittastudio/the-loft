@@ -47,16 +47,15 @@ const onIntent = (item: Item) => {
     class="fixed inset-x-0 top-0 z-10 pointer-events-none"
   >
     <div class="wrapper pt-(--app-gutter-outer)">
-      <ul class="flex flex-row-reverse justify-between md:flex-col md:items-end pointer-events-auto font-sans text-right text-24 leading-tight lowercase">
+      <ul class="flex flex-row-reverse justify-between md:flex-col md:items-end pointer-events-auto font-sans text-right text-20 leading-[1.1] lowercase">
         <li
           v-for="item in items"
           :key="item._uid"
           v-editable="item"
         >
-          <!-- 44px tap target on touch-sized layouts; tight stack from md as per design. -->
           <StoryblokLink
             :item="item.link"
-            class="inline-block max-md:p-(--app-gutter-outer) max-md:-m-(--app-gutter-outer) transition-opacity duration-300 ease-out only-hover:hover:opacity-50"
+            class="inline-block p-(--app-gutter-outer) -m-(--app-gutter-outer) md:py-0 md:-my-0 transition-opacity duration-300 ease-out hover:opacity-50"
             @click="onClick($event, item)"
             @pointerenter="onIntent(item)"
             @focus="onIntent(item)"

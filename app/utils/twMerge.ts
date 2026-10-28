@@ -5,6 +5,7 @@ export const twMerge = extendTailwindMerge({
     classGroups: {
       'font-size': [
         'text-16',
+        'text-20',
         'text-24',
       ],
       'text-color': [
