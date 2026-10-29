@@ -18,10 +18,5 @@ const { story } = defineProps<Props>()
       v-if="block.component === 'block_hero'"
       :block="block"
     />
-
-    <BlockText
-      v-else-if="block.component === 'block_text'"
-      :block="block"
-    />
   </section>
 </template>

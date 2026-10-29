@@ -14,6 +14,8 @@
     color: var(--color-black);
     background-color: var(--color-brand);
     scrollbar-gutter: stable;
+    /* No rubber-banding or pull-to-refresh, which swipes on the hero would otherwise trigger. */
+    overscroll-behavior: none;
 
     /* Scroll lock while a modal <dialog> is open. */
     &:has(dialog:modal) {
