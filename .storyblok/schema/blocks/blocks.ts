@@ -1,6 +1,5 @@
 import {
   defineBlock,
-  defineField,
 } from '@storyblok/schema';
 
 export const blocksBlock = defineBlock({

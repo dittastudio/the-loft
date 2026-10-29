@@ -1,5 +1,5 @@
-import type { Page } from '#storyblok-components'
+import type { Block } from '#storyblok-schema'
 
-type BlockTypes = NonNullable<Page['blocks']>[number]
+type BlockTypes = NonNullable<Block<'page'>['blocks']>[number]
 
 export { BlockTypes }

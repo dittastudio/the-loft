@@ -1,7 +1,6 @@
-import type { Image, Page } from '#storyblok-components'
-import type { StoryblokRichtext } from '#storyblok-types'
+import type { Block } from '#storyblok-schema'
 import type { ImageModifiers } from '@nuxt/image'
-import type { MultilinkFieldValue } from '@storyblok/schema'
+import type { AssetFieldValue, RichTextFieldValue } from '@storyblok/schema'
 import type { ISbStoryData } from '@storyblok/js'
 import type { LocationQuery } from 'vue-router'
 
@@ -27,12 +26,8 @@ const storyblokAssetType = (filename: string): 'image' | 'video' | 'other' => {
   return 'other'
 }
 
-const storyblokPdf = (link: MultilinkFieldValue | undefined): string | null => {
-  if (link?.linktype !== 'asset') {
-    return null
-  }
-
-  const url = link.url || link.cached_url
+const storyblokPdf = (asset: AssetFieldValue | null | undefined): string | null => {
+  const url = asset?.filename
 
   return url?.toLowerCase().endsWith('.pdf') ? url : null
 }
@@ -40,22 +35,23 @@ const storyblokPdf = (link: MultilinkFieldValue | undefined): string | null => {
 // a.storyblok.com sends no CORS headers, a2.storyblok.com does. Needed for fetching assets from JS (e.g. pdf.js).
 const storyblokCorsUrl = (url: string): string => url.replace('//a.storyblok.com/', '//a2.storyblok.com/')
 
-const storyblokRichTextContent = (richtext: StoryblokRichtext | undefined): boolean =>
-  Boolean(richtext?.content?.[0]?.content?.length)
+const storyblokRichTextContent = (richtext: RichTextFieldValue | undefined): boolean => {
+  const first = richtext?.content?.[0]
+
+  // Text nodes have no `content`, so narrow before reading it.
+  return Boolean(first && 'content' in first && first.content?.length)
+}
 
 const storyblokSlug = (path: string): string => (['', '/'].includes(path) ? '/home' : path.replace(/\/+$/, ''))
 
-const isImageComponent = (media: Image): media is Image => media.component === 'image'
+type Page = Block<'page'>
 
 type ContentTypes = Page
 
 const isPage = (story: ISbStoryData<ContentTypes> | null | undefined): story is ISbStoryData<Page> =>
   Boolean(story?.content?.component === 'page')
 
-const storyblokImage = (
-  filename: string | null | undefined,
-  modifiers?: Partial<ImageModifiers> | undefined,
-): string => {
+const storyblokImage = (filename: string | null | undefined, modifiers?: Partial<ImageModifiers>): string => {
   const image = useImage()
 
   const path = image(filename ?? '', {
@@ -94,7 +90,6 @@ const storyblokImageDimensions = (filename: string | null | undefined): { width:
 }
 
 export {
-  isImageComponent,
   isPage,
   storyblokAssetType,
   storyblokCorsUrl,

@@ -5,6 +5,7 @@ import type { BlockContent, MapiStory as InferStoryMapi } from '@storyblok/schem
 import { blockHeroBlock } from './blocks/block-hero';
 import { blocksBlock } from './blocks/blocks';
 import { elementLinkBlock } from './blocks/element-link';
+import { elementLinkPdfBlock } from './blocks/element-link-pdf';
 import { pageBlock } from './blocks/page';
 import { settingsBlock } from './blocks/settings';
 import { blocksFolder } from './folders/blocks';
@@ -16,6 +17,7 @@ export const schema = defineSchema({
     blockHeroBlock,
     blocksBlock,
     elementLinkBlock,
+    elementLinkPdfBlock,
     pageBlock,
     settingsBlock,
   },
