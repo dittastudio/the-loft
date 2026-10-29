@@ -17,7 +17,10 @@
     /* No rubber-banding or pull-to-refresh, which swipes on the hero would otherwise trigger. */
     overscroll-behavior: none;
 
-    /* Scroll lock while a modal <dialog> is open. */
+    /*
+      Scroll lock while a modal <dialog> is open. The dialog's own overscroll-behavior does this where it's honoured on
+      non-scrolling containers; this covers Safari, and scrollbar-gutter keeps it from shifting the layout.
+    */
     &:has(dialog:modal) {
       overflow: hidden;
     }

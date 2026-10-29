@@ -33,7 +33,11 @@ const sync = async (value: boolean) => {
   } else if (el.open && !('closing' in el.dataset)) {
     el.dataset.closing = ''
 
-    await Promise.allSettled(el.getAnimations({ subtree: true }).map((animation) => animation.finished))
+    // Capped, so an animation that never finishes (an infinite one in the slot) can't hold the dialog open.
+    await Promise.race([
+      Promise.allSettled(el.getAnimations({ subtree: true }).map((animation) => animation.finished)),
+      new Promise((resolve) => setTimeout(resolve, 2000)),
+    ])
 
     // Reopened mid-exit: the reverse transition has already taken over.
     if (open.value) {
@@ -128,6 +132,8 @@ const onClick = (event: MouseEvent) => {
   color: var(--color-black);
   background: transparent;
   overflow: hidden;
+  /* Stops scroll chaining to the page even while the scroller has nothing to scroll (e.g. the PDF is still loading). */
+  overscroll-behavior: contain;
   /* The dialog itself takes focus on open (so the close button doesn't show a ring); it needs no indicator of its own. */
   outline: none;
 }
