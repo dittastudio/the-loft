@@ -67,7 +67,7 @@ const imageClip = useBoxTurn(cell, imageEl, {
           sizes="sm:43vw md:27vw lg:20vw"
           fetchpriority="high"
           draggable="false"
-          class="absolute top-1/2 left-1/2 -translate-1/2 size-[calc((var(--image-scale)+2*var(--image-drift))*100%)] max-w-none object-cover will-change-transform"
+          class="absolute top-1/2 left-1/2 -translate-1/2 size-[calc((var(--image-scale)+2*var(--image-drift))*100%)] max-w-none object-cover will-change-transform pointer-events-none"
         />
       </div>
 
