@@ -26,7 +26,7 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "nuke": "del-cli '.output' 'dist' '.nuxt' 'node_modules' 'package-lock.json'",
-    "prepare": "vp config && husky"
+    "prepare": "vp config"
   },
   "dependencies": {
     "@vueuse/nuxt": "^15.0.0",
@@ -47,7 +47,6 @@
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/node": "^26.6.5",
     "del-cli": "^8.0.1",
-    "husky": "^9.1.7",
     "nuxt-ai-ready": "^3.4.0",
     "postcss-nested": "^9.0.1",
     "postcss-utopia": "^1.1.0",
