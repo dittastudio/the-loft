@@ -8,6 +8,7 @@ const { label } = defineProps<Props>()
 const open = defineModel<boolean>('open', { default: false })
 
 const dialog = useTemplateRef('dialog')
+const { isModalOpen, notify } = useTopLayer()
 
 /*
   The exit runs while the dialog is still modal, and close() is only called once it has finished.
@@ -26,6 +27,8 @@ const sync = async (value: boolean) => {
 
     if (!el.open) {
       el.showModal()
+      isModalOpen.value = true
+      notify()
     }
   } else if (el.open && !('closing' in el.dataset)) {
     el.dataset.closing = ''
@@ -39,6 +42,7 @@ const sync = async (value: boolean) => {
 
     delete el.dataset.closing
     el.close()
+    isModalOpen.value = false
   }
 }
 
@@ -83,7 +87,7 @@ const onClick = (event: MouseEvent) => {
 
         <button
           type="button"
-          class="pointer-events-auto inline-block max-md:p-(--app-gutter-outer) max-md:-m-(--app-gutter-outer) lowercase transition-opacity duration-300 ease-out only-hover:hover:opacity-50"
+          class="pointer-events-auto inline-block p-(--app-gutter-outer) -m-(--app-gutter-outer) lowercase transition-opacity duration-300 ease-out hover:opacity-50"
           @click="open = false"
         >
           Close

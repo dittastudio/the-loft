@@ -32,3 +32,5 @@ logs
 
 # Claude
 .claude/settings.local.json
+# Profiles
+*.cpuprofile

@@ -22,6 +22,7 @@ useSeoMeta({
   ogImage: storyblokImage(seo_image?.filename, imageOptions) || null,
   ogImageWidth: imageOptions.width,
   ogImageHeight: imageOptions.height,
+  ogImageAlt: seo_image?.alt || undefined,
   ogType: 'website',
 })
 </script>

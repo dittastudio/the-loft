@@ -79,7 +79,7 @@ const onIntent = (item: Item) => {
         :href="pdf.src"
         target="_blank"
         download
-        class="inline-block max-md:p-(--app-gutter-outer) max-md:-m-(--app-gutter-outer) transition-opacity duration-300 ease-out only-hover:hover:opacity-50"
+        class="inline-block p-(--app-gutter-outer) -m-(--app-gutter-outer) transition-opacity duration-300 ease-out hover:opacity-50"
       >
         Download
       </a>

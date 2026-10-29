@@ -37,15 +37,17 @@ interface BoxTurnOptions {
   reach?: number // how far from the resting area towards the edge, as a fraction, the cursor goes before the box fully takes over the shape
   response?: number // ms the spring following the cursor takes to swing once, lower is snappier
   bounce?: number // how far the spring following the cursor overshoots, 0 for none
-  leave?: number // ms the spring easing it back once the cursor leaves the window takes to swing once, which never overshoots
+  leave?: number // ms the image takes to ease back, and the box into its resting shape, once the cursor leaves the window, which never overshoots
   duration?: number // ms a quarter spin takes, without a cursor
   rest?: number // ms between spins, without a cursor
   scroll?: ScrollOptions // how the box tumbles the way the page is scrolled
   surface?: Ref<HTMLElement | null> // where a sideways swipe can grab it by touch, as well as the box itself
+  paused?: Ref<boolean> // while true, such as under a modal, it holds still and ignores input, carrying on once false
 }
 
 const GRAB_SLOP = 4 // px a press moves before it's a drag rather than a poke
 const GRAB_SMOOTHING = 0.05 // seconds the speed of a held box takes to catch up with the pointer
+const TURN_STEP = 1e-3 // seconds ahead the turn to the cursor is measured, to find how fast it's turning
 const POKE_CENTRE = 0.2 // how near the centre, as a fraction of the way to the edge, a poke goes a random way
 const FIRST_SPIN = 1200 // ms before the first spin, without a cursor
 const SPIN_NEAR = 0.25 // radians from a face a click can still spin the box rather than poke it
@@ -91,6 +93,7 @@ export default function useBoxTurn(
     rest = 4500,
     scroll = {},
     surface = target,
+    paused = shallowRef(false),
   }: BoxTurnOptions,
 ) {
   // Cell units to a percentage of the cell, reaching outside it as the box turns.
@@ -151,6 +154,13 @@ export default function useBoxTurn(
       distance,
       scale,
     ))
+
+  // Fitted while the browser is idle, so the first frame that turns the box doesn't pay for it.
+  onMounted(() => {
+    if (mode.value) {
+      ;(window.requestIdleCallback ?? setTimeout)(() => getBox())
+    }
+  })
 
   // Where the cursor is from the centre of the box, -1 to 1 at the edges of the viewport, which the image drifts with,
   // then how far the box turns for it. The turn springs on its own, past the resting area, so it eases into rest in sight
@@ -221,8 +231,8 @@ export default function useBoxTurn(
     }
   }
 
-  // Scrolling throws the box the way the page moves, rolling its front up as the page goes up and left as it goes left, on
-  // top of however it's turned to the cursor. It coasts, slowing with `friction`, then a spring lands it on whichever face
+  // Scrolling throws the box against the way the page moves, rolling its front down as the page goes up and right as it
+  // goes left, so it turns the way the fingers or wheel push, on top of however it's turned to the cursor. It coasts, slowing with `friction`, then a spring lands it on whichever face
   // it was heading for, taking over gradually so there's no tug. It's the cube's symmetry that lands, around the cursor's turn, so it settles looking untouched.
   const {
     sensitivity = 1,
@@ -244,22 +254,31 @@ export default function useBoxTurn(
   // Extra turn in screen space on top of the cursor's, and how fast it's turning, in radians a second around each axis.
   let tumble = IDENTITY
   const spinVelocity: Vec3 = [0, 0, 0]
+  // The turn to the cursor last frame, so a change in it turns a tumbling box on the screen's axes, over the tumble, the
+  // way the cursor moved, rather than on its own axes under it, which a tumble could turn the wrong way round.
+  let lastAround: Mat3 | undefined
   let landing: Mat3 | undefined
   let landingTime = 0
   const isTumbling = shallowRef(false)
+  // Let go too slowly to be thrown, it keeps its turned outline until it lands, as it does while held, rather than
+  // snapping to the resting shape a slow tumble would have by then.
+  let isLimp = false
 
   // The pointer holding the box, where it's been, and how far it's turned the box since the last frame.
   let grab:
     | { id: number; start: Point; last: Point; rect: DOMRect; isOnBox: boolean; moved: boolean; turned: Vec3 }
     | undefined
 
-  // The symmetry that, around `around`, is closest to `orientation`.
+  // The symmetry that, around `around`, is closest to `orientation`. Turning both by the same rotation leaves the angle
+  // between them alone, so `orientation` is brought back from around `around` once, rather than taking every symmetry
+  // there, as this runs every frame of a tumble.
   const nearest = (orientation: Mat3, around: Mat3) => {
+    const local = multiply(multiply(transpose(around), orientation), around)
     let best = IDENTITY
     let bestAngle = Infinity
 
     for (const symmetry of SYMMETRIES) {
-      const angle = angleBetween(multiply(multiply(around, symmetry), transpose(around)), orientation)
+      const angle = angleBetween(symmetry, local)
 
       if (angle < bestAngle) {
         best = symmetry
@@ -270,8 +289,8 @@ export default function useBoxTurn(
     return { symmetry: best, angle: bestAngle }
   }
 
-  // How the box is turned to the cursor.
-  const facing = () => turn(current[2] * turns[0] * Math.PI * 2, current[3] * turns[1] * Math.PI * 2)
+  // How the box is turned to the cursor, or to where it's aiming at `[x, y]`.
+  const facing = (x = current[2], y = current[3]) => turn(x * turns[0] * Math.PI * 2, y * turns[1] * Math.PI * 2)
 
   // A spin in progress hands over where it's got to, so a throw or a grab carries on from there. It spins the box on its
   // own axes, under its turn to the cursor, where a tumble turns it on the screen's, over it.
@@ -294,16 +313,21 @@ export default function useBoxTurn(
   }
 
   const throwBox = (dx: number, dy: number, turnsPer1000 = sensitivity) => {
-    if (!mode.value || !isVisible.value || grab) {
+    if (!mode.value || !isVisible.value || grab || paused.value) {
       return
     }
 
     takeOver()
 
     const gain = (decay * turnsPer1000 * Math.PI * 2) / 1000
-    spinVelocity[0] -= dy * gain
-    spinVelocity[1] -= dx * gain
+    spinVelocity[0] += dy * gain
+    spinVelocity[1] += dx * gain
     capSpeed()
+
+    // Fast enough that the outline no longer depends on it.
+    if (Math.hypot(...spinVelocity) >= landingSpeed) {
+      isLimp = false
+    }
 
     landing = undefined
     isTumbling.value = true
@@ -358,6 +382,7 @@ export default function useBoxTurn(
       tumble = IDENTITY
       spinVelocity.fill(0)
       landing = undefined
+      isLimp = false
       isTumbling.value = false
     }
   }
@@ -375,7 +400,10 @@ export default function useBoxTurn(
     if (isTumbling.value) {
       // Held still off a face it keeps its turned outline, rather than easing back as a slowing tumble would.
       const near = nearest(tumble, around).angle / (Math.PI / 2)
-      w = Math.max(w, smoothstep(Math.min(1, near / morph, grab ? 1 : Math.hypot(...spinVelocity) / landingSpeed)))
+      w = Math.max(
+        w,
+        smoothstep(Math.min(1, near / morph, grab || isLimp ? 1 : Math.hypot(...spinVelocity) / landingSpeed)),
+      )
 
       const pull = (v: number) => Math.tanh(v / (Math.PI * 2)) * scrollDrift
       x = Math.min(1, Math.max(-1, x + pull(spinVelocity[1])))
@@ -395,11 +423,65 @@ export default function useBoxTurn(
     const [, , x, y] = current
     const around = facing()
 
+    // Turning the tumble by the same change, either side, carries the face it's landing on along with it too, so the
+    // spring doesn't chase it.
+    if (isTumbling.value && lastAround) {
+      const change = multiply(around, transpose(lastAround))
+      tumble = multiply(multiply(change, tumble), transpose(change))
+    }
+
+    lastAround = around
+
     if (isTumbling.value) {
       tumbling(delta, around)
     }
 
-    render(around, smoothstep(Math.min(1, Math.hypot(x, y) / reach)), [current[0], current[1]])
+    let fade = 0
+
+    if (isFading.value) {
+      fadeTime += delta
+      fade = fadeFrom * (1 - smoothstep(Math.min(1, fadeTime / leave)))
+      isFading.value = fadeTime < leave
+    }
+
+    render(around, Math.max(fade, smoothstep(Math.min(1, Math.hypot(x, y) / reach))), [current[0], current[1]])
+  }
+
+  // Once the cursor leaves the window the box is let go where it's turned, as if it had been held there, rather than
+  // turning back to the front. Like a box let go by hand, it coasts on at the speed it was turning and lands on the
+  // nearest face, keeping its outline until it does, while the image eases back. Whatever outline it had for being
+  // turned to the cursor fades over `leave`, in case it was already on a face.
+  let fadeFrom = 0
+  let fadeTime = 0
+  const isFading = shallowRef(false)
+
+  const leaveWindow = () => {
+    client = undefined
+
+    if (mode.value !== 'follow' || paused.value) {
+      return
+    }
+
+    // Its turn to the cursor is handed to the tumble, along with how fast it was turning, on the screen's axes.
+    const around = facing()
+    const ahead = facing(current[2] + velocity[2] * TURN_STEP, current[3] + velocity[3] * TURN_STEP)
+    const turning = toAxisAngle(multiply(multiply(tumble, multiply(ahead, transpose(around))), transpose(tumble)))
+    spinVelocity.forEach((v, i) => (spinVelocity[i] = v + turning[i]! / TURN_STEP))
+    tumble = multiply(tumble, around)
+
+    fadeFrom = smoothstep(Math.min(1, Math.hypot(current[2], current[3]) / reach))
+    fadeTime = 0
+    isFading.value = fadeFrom > 0
+
+    current[2] = current[3] = velocity[2] = velocity[3] = 0
+    // Already handed to the tumble, so the jump back to the front isn't a turn of the cursor's.
+    lastAround = undefined
+    moveTo(0, 0, leaveSpring)
+
+    capSpeed()
+    landing = undefined
+    isLimp = Math.hypot(...spinVelocity) < landingSpeed
+    isTumbling.value = true
   }
 
   // Without a cursor, spin a three-quarter turn every so often, and with one, whenever the box is clicked. Every spin goes
@@ -487,7 +569,7 @@ export default function useBoxTurn(
 
   // Start after a short wait. A spin cut short by scrolling away finishes first, and the next one carries on the sequence.
   watch(
-    () => mode.value === 'autoplay' && isVisible.value && !isTumbling.value,
+    () => mode.value === 'autoplay' && isVisible.value && !isTumbling.value && !paused.value,
     (isPlaying) => {
       if (!isPlaying) {
         unschedule()
@@ -498,10 +580,13 @@ export default function useBoxTurn(
     },
   )
 
-  // Hidden tabs get no frames anyway, so only being offscreen needs checking. Otherwise frames only run while the spring
-  // is settling or the box is spinning or tumbling.
+  // Hidden tabs get no frames anyway, so only being offscreen or paused needs checking. Otherwise frames only run while the
+  // spring is settling or the box is spinning or tumbling.
   const canRun = computed(
-    () => isVisible.value && (isTumbling.value || isSpinning.value || (mode.value === 'follow' && !isSettled.value)),
+    () =>
+      !paused.value &&
+      isVisible.value &&
+      (isTumbling.value || isSpinning.value || (mode.value === 'follow' && (!isSettled.value || isFading.value))),
   )
 
   const { pause, resume } = useRafFn(
@@ -535,6 +620,8 @@ export default function useBoxTurn(
     tumble = IDENTITY
     spinVelocity.fill(0)
     landing = undefined
+    isLimp = false
+    isFading.value = false
     grab = undefined
     pointer.fill(0)
     current.fill(0)
@@ -549,7 +636,7 @@ export default function useBoxTurn(
 
   // Held, the box stays turned to wherever the cursor was when it was grabbed.
   const follow = () => {
-    if (mode.value !== 'follow' || !client || !target.value || grab) {
+    if (mode.value !== 'follow' || !client || !target.value || grab || paused.value) {
       return
     }
 
@@ -627,8 +714,7 @@ export default function useBoxTurn(
     'pointerout',
     (event: PointerEvent) => {
       if (mode.value === 'follow' && !event.relatedTarget && !grab) {
-        client = undefined
-        moveTo(0, 0, leaveSpring)
+        leaveWindow()
       }
     },
     { passive: true },
@@ -717,7 +803,7 @@ export default function useBoxTurn(
         return
       }
 
-      // Down rolls the front down and right turns it right, the other way to a scroll, which moves the page the other way.
+      // Down rolls the front down and right turns it right.
       const gain = Math.PI / 2 / Math.max(1, grab.rect.width)
       const turned: Vec3 = [(event.clientY - grab.last[1]) * gain, (event.clientX - grab.last[0]) * gain, 0]
       tumble = multiply(fromAxisAngle(turned), tumble)
@@ -785,11 +871,11 @@ export default function useBoxTurn(
 
     capSpeed()
     landing = undefined
+    isLimp = Math.hypot(...spinVelocity) < landingSpeed
 
     // Dragged out of the window, it's let go as if the cursor had just left, which it did while held.
     if (mode.value === 'follow' && (x < 0 || y < 0 || x >= windowWidth.value || y >= windowHeight.value)) {
-      client = undefined
-      moveTo(0, 0, leaveSpring)
+      leaveWindow()
     } else {
       follow()
     }

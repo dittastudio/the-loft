@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@import './fonts.css';
 @import './resets.css';
 @import './transitions.css';
 @import './utils.css';
@@ -21,6 +20,7 @@
   --color-black: hsla(0, 0%, 0%, 1);
   --color-brand: oklch(40.8% 0.131 266.5); /* #294390 */
   --color-grey: oklch(75.8% 0.008 186.82); /* #abb2b1 */
+  --color-grey-mid: oklch(67% 0.008 186.82); /* #909796, 3:1 on both white and brand */
 
   --breakpoint-\*: initial;
   /* Literal values, as var() is not valid inside @media queries. Keep in sync with --bp-*. */

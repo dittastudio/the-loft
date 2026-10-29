@@ -10,14 +10,13 @@ interface Props {
 const { block } = defineProps<Props>()
 
 const container = useTemplateRef('container')
-const collaboration = useTemplateRef('collaboration')
-const isBouncing = useBounce(collaboration, container, { speed: 100 })
 
 // The image is drawn larger than its cell so the turning box always stays over it, even as it drifts.
 const imageScale = 1.6
 const imageDrift = 0.06
 const cell = useTemplateRef('cell')
 const image = useTemplateRef('image')
+const { isModalOpen } = useTopLayer()
 const imageEl = computed<HTMLElement | null>(() => image.value?.$el ?? null)
 const imageClip = useBoxTurn(cell, imageEl, {
   shape: [
@@ -30,6 +29,8 @@ const imageClip = useBoxTurn(cell, imageEl, {
   scale: imageScale,
   drift: imageDrift,
   surface: container,
+  // Nothing of it shows under a modal, and repainting it there would make the modal's frost recompute its blur.
+  paused: isModalOpen,
 })
 </script>
 
@@ -62,7 +63,7 @@ const imageClip = useBoxTurn(cell, imageEl, {
           :alt="block.image.alt ?? ''"
           :width="688"
           :height="688"
-          format="webp"
+          format="avif"
           sizes="sm:43vw md:27vw lg:20vw"
           fetchpriority="high"
           draggable="false"
@@ -75,15 +76,6 @@ const imageClip = useBoxTurn(cell, imageEl, {
         class="row-start-3 col-start-4 md:col-start-3 lg:col-start-2 col-span-1 self-start justify-self-start md:justify-self-end w-(--ec1-w) h-auto mt-(--ec1-offset) fill-current"
       />
     </div>
-
-    <p
-      v-if="block.collaboration"
-      ref="collaboration"
-      class="absolute top-0 left-0 font-serif italic text-16 md:text-24 leading-tight text-grey whitespace-pre-line pointer-events-none will-change-transform"
-      :class="{ invisible: !isBouncing }"
-    >
-      {{ block.collaboration }}
-    </p>
   </div>
 </template>
 

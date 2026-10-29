@@ -34,7 +34,7 @@ Storyblok components are defined in TypeScript in `.storyblok/schema/`, not in t
 - `TemplatePage` dispatches each `story.content.blocks` item to its `Block*` component with an explicit `v-if` on `block.component`. Storyblok's dynamic component resolution is not used. A new block needs a schema file, a component in `app/components/block/`, and a branch in `app/components/template/Page.vue`.
 - Block components take a single `block` prop and put `v-editable="block"` on their root element.
 - `app/utils/storyblok.ts` holds the Storyblok helpers: image URLs and dimensions, asset type detection, PDF links, and checks for empty rich text. Storyblok assets that are fetched from JS (pdf.js, for example) must go through `storyblokCorsUrl`, because only `a2.storyblok.com` sends CORS headers.
-- `server/api/sitemap.ts` builds the sitemap from the published stories.
+- `server/api/sitemap.get.ts` builds the sitemap from the published stories.
 
 ## Styling
 

@@ -13,6 +13,5 @@ export const blockHeroBlock = defineBlock({
   folder: blocksFolder,
   fields: [
     defineField('image', { type: 'asset', filetypes: ['images'] }),
-    defineField('collaboration', { type: 'textarea' }),
   ],
 });

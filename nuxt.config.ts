@@ -25,7 +25,7 @@ export default defineNuxtConfig({
             smart: true,
           },
         },
-        format: ['webp'],
+        format: ['avif', 'webp'],
         domains: ['storyblok.com', 'raw.london'],
         quality: 85,
         screens: {
@@ -50,7 +50,11 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
   ],
   fonts: {
-    families: [{ name: 'EB Garamond', provider: 'google', weights: [400], styles: ['italic'] }],
+    families: [
+      // Served from public/fonts, so @nuxt/fonts writes the @font-face, a metric-matched fallback and the preload.
+      { name: 'UniversPro57Condensed', provider: 'local', weights: [400], styles: ['normal'] },
+      { name: 'EB Garamond', provider: 'google', weights: [400], styles: ['italic'] },
+    ],
   },
   ssr: !isSpa,
   devtools: false,
@@ -68,10 +72,7 @@ export default defineNuxtConfig({
         { name: 'apple-mobile-web-app-title', content: 'The Loft' },
         { 'http-equiv': 'content-language', content: 'en-GB' },
       ],
-      link: [
-        { rel: 'manifest', href: '/site.webmanifest' },
-        { rel: 'preload', href: '/fonts/UniversPro57Condensed.woff2', as: 'font', type: 'font/woff2', crossorigin: '' },
-      ],
+      link: [{ rel: 'manifest', href: '/site.webmanifest' }],
     },
   },
   css: ['~/assets/css/app.css'],
@@ -79,8 +80,15 @@ export default defineNuxtConfig({
     url: 'https://the-loft.com',
     name: 'The Loft',
   },
+  ogImage: {
+    enabled: false,
+  },
   seo: {
     automaticOgAndTwitterTags: false,
+  },
+  // A static site gets nothing from polling for new builds, and it adds a service worker and client runtime.
+  skewProtection: {
+    enabled: false,
   },
   runtimeConfig: {
     STORYBLOK_SPACE_ID: process.env.NUXT_STORYBLOK_SPACE_ID,
@@ -98,9 +106,6 @@ export default defineNuxtConfig({
     },
   },
   nitro: {
-    experimental: {
-      wasm: true, // ...for Cloudflare Workers
-    },
     prerender: {
       crawlLinks: !isSpa,
       routes: isSpa ? [] : ['/'],
@@ -108,10 +113,22 @@ export default defineNuxtConfig({
       ignore: [(route) => route.includes('?')],
     },
   },
+  hooks: {
+    // pdf.js, its worker and the Storyblok bridge only load on demand (preloadPdf warms pdf.js on intent), so every
+    // visitor shouldn't prefetch them.
+    'build:manifest': (manifest) => {
+      for (const chunk of Object.values(manifest)) {
+        if (/pdfjs-dist|pdf\.worker|@storyblok\/preview-bridge/.test(chunk.src ?? chunk.file)) {
+          chunk.prefetch = false
+          chunk.preload = false
+        }
+      }
+    },
+  },
   compatibilityDate: '2026-02-10',
   vite: {
     optimizeDeps: {
-      include: ['@storyblok/vue', '@tiptap/core', 'tailwind-merge'],
+      include: ['@storyblok/vue', '@tiptap/core', 'pdfjs-dist', 'tailwind-merge'],
     },
     plugins: [
       tailwindcss(),

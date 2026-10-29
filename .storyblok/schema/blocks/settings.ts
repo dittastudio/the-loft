@@ -12,5 +12,6 @@ export const settingsBlock = defineBlock({
   folder: typesFolder,
   fields: [
     defineField('navigation', { type: 'bloks', allow: ['element_link'] }),
+    defineField('collaboration', { type: 'textarea' }),
   ],
 });

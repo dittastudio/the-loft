@@ -24,6 +24,11 @@ useSeoMeta({
   <div>
     <SiteNavigation :items="story.content.navigation" />
 
+    <LazySiteCollaboration
+      v-if="story.content.collaboration?.trim()"
+      :text="story.content.collaboration"
+    />
+
     <NuxtPage />
 
     <DevOnly>

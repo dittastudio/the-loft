@@ -57,13 +57,18 @@ const hull = (points: Point[]): Point[] => {
 
 export const IDENTITY: Mat3 = [1, 0, 0, 0, 1, 0, 0, 0, 1]
 
-export const multiply = (a: Mat3, b: Mat3) =>
-  IDENTITY.map((_, i) => {
-    const row = Math.floor(i / 3) * 3
-    const col = i % 3
-
-    return a[row]! * b[col]! + a[row + 1]! * b[col + 3]! + a[row + 2]! * b[col + 6]!
-  }) as Mat3
+// Written out, as it runs many times a frame.
+export const multiply = (a: Mat3, b: Mat3): Mat3 => [
+  a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
+  a[0] * b[1] + a[1] * b[4] + a[2] * b[7],
+  a[0] * b[2] + a[1] * b[5] + a[2] * b[8],
+  a[3] * b[0] + a[4] * b[3] + a[5] * b[6],
+  a[3] * b[1] + a[4] * b[4] + a[5] * b[7],
+  a[3] * b[2] + a[4] * b[5] + a[5] * b[8],
+  a[6] * b[0] + a[7] * b[3] + a[8] * b[6],
+  a[6] * b[1] + a[7] * b[4] + a[8] * b[7],
+  a[6] * b[2] + a[7] * b[5] + a[8] * b[8],
+]
 
 // Its inverse, as it's a rotation.
 export const transpose = (m: Mat3): Mat3 => [m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8]]
