@@ -4,8 +4,7 @@ const getBreakpoint = (breakpoint: string): number => {
     return 0
   }
 
-  const value = getComputedStyle(document.documentElement)
-    .getPropertyValue(`--bp-${breakpoint}`)
+  const value = getComputedStyle(document.documentElement).getPropertyValue(`--bp-${breakpoint}`)
 
   return value ? Number.parseInt(value, 10) : 0
 }
@@ -16,7 +15,5 @@ export const getMediaQuery = (breakpoint: string): string => {
   const cleanBreakpoint = isMax ? breakpoint.slice(4) : breakpoint
   const value = getBreakpoint(cleanBreakpoint)
 
-  return isMax
-    ? `(max-width: ${value - 1}px)`
-    : `(min-width: ${value}px)`
+  return isMax ? `(max-width: ${value - 1}px)` : `(min-width: ${value}px)`
 }

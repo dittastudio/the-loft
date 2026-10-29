@@ -42,7 +42,12 @@ const SETTLE = 700 // ms the spring easing a cancelled spin back to rest takes t
 
 // The ways the front sweeps on each spin in turn, as which way it goes around and over: top right to bottom left, bottom
 // right to top left, bottom left to top right, then top left to bottom right.
-const DIAGONALS: Point[] = [[-1, 1], [-1, -1], [1, -1], [1, 1]]
+const DIAGONALS: Point[] = [
+  [-1, 1],
+  [-1, -1],
+  [1, -1],
+  [1, 1],
+]
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
@@ -59,8 +64,7 @@ const cubicBezier = (x1: number, y1: number, x2: number, y2: number) => {
 
       if (at(x1, x2, mid) < x) {
         lo = mid
-      }
-      else {
+      } else {
         hi = mid
       }
     }
@@ -72,7 +76,7 @@ const cubicBezier = (x1: number, y1: number, x2: number, y2: number) => {
 // Gets going quickly and glides to a long, soft stop.
 const easeSpin = cubicBezier(0.45, 0, 0.15, 1)
 
-const CUBE: Vec3[] = [-0.5, 0.5].flatMap(x => [-0.5, 0.5].flatMap(y => [-0.5, 0.5].map(z => [x, y, z] as Vec3)))
+const CUBE: Vec3[] = [-0.5, 0.5].flatMap((x) => [-0.5, 0.5].flatMap((y) => [-0.5, 0.5].map((z) => [x, y, z] as Vec3)))
 
 // Monotone chain, returns the hull in screen order.
 const hull = (points: Point[]): Point[] => {
@@ -97,12 +101,13 @@ const hull = (points: Point[]): Point[] => {
 
 const IDENTITY: Mat3 = [1, 0, 0, 0, 1, 0, 0, 0, 1]
 
-const multiply = (a: Mat3, b: Mat3) => IDENTITY.map((_, i) => {
-  const row = Math.floor(i / 3) * 3
-  const col = i % 3
+const multiply = (a: Mat3, b: Mat3) =>
+  IDENTITY.map((_, i) => {
+    const row = Math.floor(i / 3) * 3
+    const col = i % 3
 
-  return a[row]! * b[col]! + a[row + 1]! * b[col + 3]! + a[row + 2]! * b[col + 6]!
-}) as Mat3
+    return a[row]! * b[col]! + a[row + 1]! * b[col + 3]! + a[row + 2]! * b[col + 6]!
+  }) as Mat3
 
 // Its inverse, as it's a rotation.
 const transpose = (m: Mat3): Mat3 => [m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8]]
@@ -121,9 +126,15 @@ const fromAxisAngle = ([x, y, z]: Vec3): Mat3 => {
   const t = 1 - c
 
   return [
-    t * ux * ux + c, t * ux * uy - s * uz, t * ux * uz + s * uy,
-    t * ux * uy + s * uz, t * uy * uy + c, t * uy * uz - s * ux,
-    t * ux * uz - s * uy, t * uy * uz + s * ux, t * uz * uz + c,
+    t * ux * ux + c,
+    t * ux * uy - s * uz,
+    t * ux * uz + s * uy,
+    t * ux * uy + s * uz,
+    t * uy * uy + c,
+    t * uy * uz - s * ux,
+    t * ux * uz - s * uy,
+    t * uy * uz + s * ux,
+    t * uz * uz + c,
   ]
 }
 
@@ -140,16 +151,16 @@ const toAxisAngle = (m: Mat3): Vec3 => {
   // instead, which is twice the axis times its own length along it, turned whichever way the twist still leans.
   if (Math.PI - angle < 1e-3) {
     const j = [m[0], m[4], m[8]].indexOf(Math.max(m[0], m[4], m[8]))
-    const axis = [0, 1, 2].map(i => m[i * 3 + j]! + (i === j ? 1 : 0))
+    const axis = [0, 1, 2].map((i) => m[i * 3 + j]! + (i === j ? 1 : 0))
     const length = Math.hypot(...axis)
     const sign = axis.reduce((sum, v, i) => sum + v * twist[i]!, 0) < 0 ? -1 : 1
 
-    return axis.map(v => (v / length) * angle * sign) as Vec3
+    return axis.map((v) => (v / length) * angle * sign) as Vec3
   }
 
   const k = angle / (2 * Math.sin(angle))
 
-  return twist.map(v => v * k) as Vec3
+  return twist.map((v) => v * k) as Vec3
 }
 
 const angleBetween = (a: Mat3, b: Mat3) => Math.hypot(...toAxisAngle(multiply(a, transpose(b))))
@@ -158,12 +169,30 @@ const angleBetween = (a: Mat3, b: Mat3) => Math.hypot(...toAxisAngle(multiply(a,
 const turn = (yaw: number, pitch: number) => multiply(fromAxisAngle([pitch, 0, 0]), fromAxisAngle([0, yaw, 0]))
 
 // The 24 ways a cube can be turned and look the same: each axis onto another, either way round, without mirroring.
-const SYMMETRIES = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]].flatMap(order => [1, -1].flatMap(a => [1, -1].flatMap(b => [1, -1].map((c) => {
-  const m = [0, 0, 0, 0, 0, 0, 0, 0, 0] as Mat3;
-  [a, b, c].forEach((sign, row) => m[row * 3 + order[row]!] = sign)
+const SYMMETRIES = [
+  [0, 1, 2],
+  [0, 2, 1],
+  [1, 0, 2],
+  [1, 2, 0],
+  [2, 0, 1],
+  [2, 1, 0],
+]
+  .flatMap((order) =>
+    [1, -1].flatMap((a) =>
+      [1, -1].flatMap((b) =>
+        [1, -1].map((c) => {
+          const m = [0, 0, 0, 0, 0, 0, 0, 0, 0] as Mat3
+          ;[a, b, c].forEach((sign, row) => (m[row * 3 + order[row]!] = sign))
 
-  return m
-})))).filter(m => m[0] * (m[4] * m[8] - m[5] * m[7]) - m[1] * (m[3] * m[8] - m[5] * m[6]) + m[2] * (m[3] * m[7] - m[4] * m[6]) > 0)
+          return m
+        }),
+      ),
+    ),
+  )
+  .filter(
+    (m) =>
+      m[0] * (m[4] * m[8] - m[5] * m[7]) - m[1] * (m[3] * m[8] - m[5] * m[6]) + m[2] * (m[3] * m[7] - m[4] * m[6]) > 0,
+  )
 
 // Distance from the centre to the edge of a convex polygon along `angle`.
 const radius = (polygon: Point[], angle: number) => {
@@ -227,16 +256,23 @@ const projectBox = (rotation: Mat3, distance: number): Point[] => {
 // image in any of `orientations`.
 const fitBox = (orientations: Mat3[], distance: number, scale: number) => {
   const faceOn = projectBox(IDENTITY, distance)
-  const xs = faceOn.map(p => p[0])
-  const ys = faceOn.map(p => p[1])
+  const xs = faceOn.map((p) => p[0])
+  const ys = faceOn.map((p) => p[1])
   const offsetX = (Math.max(...xs) + Math.min(...xs)) / 2
   const offsetY = (Math.max(...ys) + Math.min(...ys)) / 2
-  const extent = (points: Point[]) => Math.max(...points.flatMap(([x, y]) => [Math.abs(x - offsetX), Math.abs(y - offsetY)]))
-  const maxExtent = Math.max(...orientations.map(rotation => extent(projectBox(rotation, distance))))
-  const fit = Math.min(1 / Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)), (0.49 * scale) / maxExtent)
+  const extent = (points: Point[]) =>
+    Math.max(...points.flatMap(([x, y]) => [Math.abs(x - offsetX), Math.abs(y - offsetY)]))
+  const maxExtent = Math.max(...orientations.map((rotation) => extent(projectBox(rotation, distance))))
+  const fit = Math.min(
+    1 / Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)),
+    (0.49 * scale) / maxExtent,
+  )
 
-  return (rotation: Mat3) => projectBox(rotation, distance)
-    .map(([x, y]): Point => [CENTRE[0] + (x - offsetX) * fit, CENTRE[1] + (y - offsetY) * fit])
+  return (rotation: Mat3) =>
+    projectBox(rotation, distance).map(([x, y]): Point => [
+      CENTRE[0] + (x - offsetX) * fit,
+      CENTRE[1] + (y - offsetY) * fit,
+    ])
 }
 
 // Small fixed steps keep the motion the same at any frame rate.
@@ -246,7 +282,8 @@ const steps = (delta: number, step: (dt: number) => void) => {
   }
 }
 
-const range = (from: number, to: number, count: number) => Array.from({ length: count + 1 }, (_, i) => from + ((to - from) * i) / count)
+const range = (from: number, to: number, count: number) =>
+  Array.from({ length: count + 1 }, (_, i) => from + ((to - from) * i) / count)
 
 // Turns the outline of a 3D box inside `target`'s clip-path, resting on `shape`, over an `image` that overflows it, and
 // springs it towards the cursor. The box rests while the cursor is over it, wherever it sits in the viewport, and the image
@@ -255,12 +292,25 @@ const range = (from: number, to: number, count: number) => Array.from({ length: 
 export default function useBoxTurn(
   target: Ref<HTMLElement | null>,
   image: Ref<HTMLElement | null>,
-  { shape, scale = 1.6, drift = 0.06, distance = 4, turns = [0.5, 0.5], reach = 0.2, response = 500, bounce = 0.3, leave = 1800, duration = 1200, rest = 4500, scroll = {}, surface = target }: BoxTurnOptions,
+  {
+    shape,
+    scale = 1.6,
+    drift = 0.06,
+    distance = 4,
+    turns = [0.5, 0.5],
+    reach = 0.2,
+    response = 500,
+    bounce = 0.3,
+    leave = 1800,
+    duration = 1200,
+    rest = 4500,
+    scroll = {},
+    surface = target,
+  }: BoxTurnOptions,
 ) {
   // Cell units to a percentage of the cell, reaching outside it as the box turns.
-  const toClipPath = (points: Point[]) => `polygon(${points
-    .map(p => p.map(v => `${+(v * 100).toFixed(3)}%`).join(' '))
-    .join(', ')})`
+  const toClipPath = (points: Point[]) =>
+    `polygon(${points.map((p) => p.map((v) => `${+(v * 100).toFixed(3)}%`).join(' ')).join(', ')})`
 
   const restClip = toClipPath(shape)
   let lastClip = restClip
@@ -276,7 +326,8 @@ export default function useBoxTurn(
 
   const setDrift = (x: number, y: number) => {
     if (image.value) {
-      image.value.style.transform = x || y ? `translate3d(${+(x * toPercent).toFixed(3)}%, ${+(y * toPercent).toFixed(3)}%, 0)` : ''
+      image.value.style.transform =
+        x || y ? `translate3d(${+(x * toPercent).toFixed(3)}%, ${+(y * toPercent).toFixed(3)}%, 0)` : ''
     }
   }
 
@@ -309,7 +360,12 @@ export default function useBoxTurn(
   // Fitted the first time it's needed. A quarter turn on Y looks the same as no turn, but turning on X first doesn't, so
   // every pitch is checked.
   let box: ReturnType<typeof fitBox> | undefined
-  const getBox = () => box ??= fitBox(range(0, Math.PI / 2, 12).flatMap(yaw => range(-Math.PI, Math.PI, 48).map(pitch => turn(yaw, pitch))), distance, scale)
+  const getBox = () =>
+    (box ??= fitBox(
+      range(0, Math.PI / 2, 12).flatMap((yaw) => range(-Math.PI, Math.PI, 48).map((pitch) => turn(yaw, pitch))),
+      distance,
+      scale,
+    ))
 
   // Where the cursor is from the centre of the box, -1 to 1 at the edges of the viewport, which the image drifts with,
   // then how far the box turns for it. The turn springs on its own, past the resting area, so it eases into rest in sight
@@ -334,7 +390,8 @@ export default function useBoxTurn(
   let active = followSpring
 
   // Room from the box's centre to the edge of the viewport on the side `d` pixels away, as the box may sit off centre.
-  const room = (d: number, axis: 0 | 1) => Math.max(1, d >= 0 ? (axis ? windowHeight.value : windowWidth.value) - centre[axis] : centre[axis])
+  const room = (d: number, axis: 0 | 1) =>
+    Math.max(1, d >= 0 ? (axis ? windowHeight.value : windowWidth.value) - centre[axis] : centre[axis])
 
   // How far the cursor, `dx` and `dy` pixels from the box's centre, is past the box, -1 to 1 at the edges. Measured along
   // the line from the centre, rather than each way on its own, so the box only rests over itself and not in the bands
@@ -347,7 +404,8 @@ export default function useBoxTurn(
       return [0, 0]
     }
 
-    const past = (d: number, axis: 0 | 1) => Math.min(1, Math.max(-1, (d * (1 - over)) / Math.max(1, room(d, axis) - zone[axis])))
+    const past = (d: number, axis: 0 | 1) =>
+      Math.min(1, Math.max(-1, (d * (1 - over)) / Math.max(1, room(d, axis) - zone[axis])))
 
     return [past(dx, 0), past(dy, 1)]
   }
@@ -369,7 +427,9 @@ export default function useBoxTurn(
     })
 
     // Close enough, and slow enough, that what remains is under a pixel.
-    if (([0, 1, 2, 3] as const).every(i => Math.abs(pointer[i] - current[i]) < 1e-3 && Math.abs(velocity[i]) < 1e-2)) {
+    if (
+      ([0, 1, 2, 3] as const).every((i) => Math.abs(pointer[i] - current[i]) < 1e-3 && Math.abs(velocity[i]) < 1e-2)
+    ) {
       current.splice(0, 4, ...pointer)
       velocity.fill(0)
       isSettled.value = true
@@ -394,7 +454,7 @@ export default function useBoxTurn(
   const decay = Math.max(1e-3, -Math.log(1 - Math.min(friction, 0.999)))
   const land = springOf(landResponse, landBounce)
   // Slow enough to cover no more than a quarter turn a swing, when the landing spring takes over.
-  const landingSpeed = (Math.PI / 2) / (landResponse / 1000)
+  const landingSpeed = Math.PI / 2 / (landResponse / 1000)
 
   // Extra turn in screen space on top of the cursor's, and how fast it's turning, in radians a second around each axis.
   let tumble = IDENTITY
@@ -404,7 +464,9 @@ export default function useBoxTurn(
   const isTumbling = shallowRef(false)
 
   // The pointer holding the box, where it's been, and how far it's turned the box since the last frame.
-  let grab: { id: number, start: Point, last: Point, rect: DOMRect, isOnBox: boolean, moved: boolean, turned: Vec3 } | undefined
+  let grab:
+    | { id: number; start: Point; last: Point; rect: DOMRect; isOnBox: boolean; moved: boolean; turned: Vec3 }
+    | undefined
 
   // The symmetry that, around `around`, is closest to `orientation`.
   const nearest = (orientation: Mat3, around: Mat3) => {
@@ -442,7 +504,7 @@ export default function useBoxTurn(
     const cap = maxSpeed * Math.PI * 2
 
     if (speed > cap) {
-      spinVelocity.forEach((v, i) => spinVelocity[i] = (v / speed) * cap)
+      spinVelocity.forEach((v, i) => (spinVelocity[i] = (v / speed) * cap))
     }
   }
 
@@ -469,7 +531,7 @@ export default function useBoxTurn(
       const { turned } = grab
       const t = delta / 1000
       const k = 1 - Math.exp(-t / GRAB_SMOOTHING)
-      spinVelocity.forEach((v, i) => spinVelocity[i] = v + (turned[i]! / Math.max(t, 1e-3) - v) * k)
+      spinVelocity.forEach((v, i) => (spinVelocity[i] = v + (turned[i]! / Math.max(t, 1e-3) - v) * k))
       turned.fill(0)
 
       return
@@ -484,7 +546,7 @@ export default function useBoxTurn(
 
       if (!landing && speed < landingSpeed) {
         const ahead = speed && Math.min(1 / decay, Math.PI / 2 / speed)
-        landing = nearest(multiply(fromAxisAngle(spinVelocity.map(v => v * ahead) as Vec3), tumble), around).symmetry
+        landing = nearest(multiply(fromAxisAngle(spinVelocity.map((v) => v * ahead) as Vec3), tumble), around).symmetry
         landingTime = 0
       }
 
@@ -494,13 +556,16 @@ export default function useBoxTurn(
         const handover = smoothstep(Math.min(1, landingTime / (landResponse / 1000)))
         target = multiply(multiply(around, landing), transpose(around))
         const error = toAxisAngle(multiply(target, transpose(tumble)))
-        spinVelocity.forEach((v, i) => spinVelocity[i] = v + (handover * (error[i]! * land.stiffness - v * land.damping) - (1 - handover) * v * decay) * dt)
-      }
-      else {
-        spinVelocity.forEach((v, i) => spinVelocity[i] = v * Math.exp(-decay * dt))
+        spinVelocity.forEach(
+          (v, i) =>
+            (spinVelocity[i] =
+              v + (handover * (error[i]! * land.stiffness - v * land.damping) - (1 - handover) * v * decay) * dt),
+        )
+      } else {
+        spinVelocity.forEach((v, i) => (spinVelocity[i] = v * Math.exp(-decay * dt)))
       }
 
-      tumble = multiply(fromAxisAngle(spinVelocity.map(v => v * dt) as Vec3), tumble)
+      tumble = multiply(fromAxisAngle(spinVelocity.map((v) => v * dt) as Vec3), tumble)
     })
 
     // Landed on a face, which looks the same as no extra turn at all.
@@ -565,7 +630,7 @@ export default function useBoxTurn(
   let elapsed = 0
   let delay = FIRST_SPIN
   let progress = 0
-  let settle: { to: number, speed: number } | undefined // cancelled, springing back to rest from `progress`
+  let settle: { to: number; speed: number } | undefined // cancelled, springing back to rest from `progress`
 
   // No overshoot, so it never swings past either end of the spin.
   const settleSpring = springOf(SETTLE, 0)
@@ -586,7 +651,7 @@ export default function useBoxTurn(
     }
 
     const t = elapsed / (duration * 1.7)
-    const speed = ((easeSpin(Math.min(1, t + 1e-3)) - easeSpin(t)) / 1e-3) / ((duration * 1.7) / 1000)
+    const speed = (easeSpin(Math.min(1, t + 1e-3)) - easeSpin(t)) / 1e-3 / ((duration * 1.7) / 1000)
     settle = { to: progress < 0.5 ? 0 : 1, speed }
   }
 
@@ -612,8 +677,7 @@ export default function useBoxTurn(
       if (isDone) {
         progress = to
       }
-    }
-    else {
+    } else {
       elapsed += delta
       const t = Math.min(1, elapsed / (duration * 1.7))
       progress = easeSpin(t)
@@ -637,42 +701,48 @@ export default function useBoxTurn(
   }
 
   // Start after a short wait. A spin cut short by scrolling away finishes first, and the next one carries on the sequence.
-  watch(() => mode.value === 'autoplay' && isVisible.value && !isTumbling.value, (isPlaying) => {
-    if (!isPlaying) {
-      unschedule()
-    }
-    else if (!isSpinning.value) {
-      delay = FIRST_SPIN
-      schedule()
-    }
-  })
+  watch(
+    () => mode.value === 'autoplay' && isVisible.value && !isTumbling.value,
+    (isPlaying) => {
+      if (!isPlaying) {
+        unschedule()
+      } else if (!isSpinning.value) {
+        delay = FIRST_SPIN
+        schedule()
+      }
+    },
+  )
 
   // Hidden tabs get no frames anyway, so only being offscreen needs checking. Otherwise frames only run while the spring
   // is settling or the box is spinning or tumbling.
-  const canRun = computed(() => isVisible.value && (isTumbling.value || isSpinning.value || (mode.value === 'follow' && !isSettled.value)))
+  const canRun = computed(
+    () => isVisible.value && (isTumbling.value || isSpinning.value || (mode.value === 'follow' && !isSettled.value)),
+  )
 
-  const { pause, resume } = useRafFn(({ delta }) => {
-    // Cap the step so returning to a background tab doesn't cause a jump.
-    const step = Math.min(delta, 50)
+  const { pause, resume } = useRafFn(
+    ({ delta }) => {
+      // Cap the step so returning to a background tab doesn't cause a jump.
+      const step = Math.min(delta, 50)
 
-    if (isSpinning.value) {
-      spinning(step)
-    }
-
-    if (mode.value === 'follow') {
-      following(step)
-    }
-    else {
-      if (isTumbling.value) {
-        tumbling(step, IDENTITY)
+      if (isSpinning.value) {
+        spinning(step)
       }
 
-      render(IDENTITY, 0, [0, 0])
-    }
-  }, { immediate: false })
+      if (mode.value === 'follow') {
+        following(step)
+      } else {
+        if (isTumbling.value) {
+          tumbling(step, IDENTITY)
+        }
+
+        render(IDENTITY, 0, [0, 0])
+      }
+    },
+    { immediate: false },
+  )
 
   // Paused from here rather than inside the frame, where the loop has already queued its next one.
-  watch(canRun, isRunning => isRunning ? resume() : pause())
+  watch(canRun, (isRunning) => (isRunning ? resume() : pause()))
 
   watch(mode, () => {
     isSpinning.value = false
@@ -707,26 +777,34 @@ export default function useBoxTurn(
     moveTo(client[0] - centre[0], client[1] - centre[1])
   }
 
-  useEventListener('pointermove', (event: PointerEvent) => {
-    client = [event.clientX, event.clientY]
+  useEventListener(
+    'pointermove',
+    (event: PointerEvent) => {
+      client = [event.clientX, event.clientY]
 
-    // Let go somewhere the release never arrived, like outside the window.
-    if (grab && event.pointerId === grab.id && !(event.buttons & 1)) {
-      release(event, 'lost')
-    }
+      // Let go somewhere the release never arrived, like outside the window.
+      if (grab && event.pointerId === grab.id && !(event.buttons & 1)) {
+        release(event, 'lost')
+      }
 
-    follow()
-  }, { passive: true })
+      follow()
+    },
+    { passive: true },
+  )
 
   // Wheels and trackpads, with a cursor, which also catch sideways swipes and swipes past the top of the page. Lines and
   // pages are roughly converted to pixels.
   // Not pinching to zoom, or scrolling an open dialog.
-  useEventListener('wheel', (event: WheelEvent) => {
-    if (mode.value === 'follow' && !event.ctrlKey && !(event.target as Element | null)?.closest?.('dialog')) {
-      const unit = [1, 16, windowHeight.value][event.deltaMode] ?? 1
-      throwBox(event.deltaX * unit, event.deltaY * unit)
-    }
-  }, { passive: true })
+  useEventListener(
+    'wheel',
+    (event: WheelEvent) => {
+      if (mode.value === 'follow' && !event.ctrlKey && !(event.target as Element | null)?.closest?.('dialog')) {
+        const unit = [1, 16, windowHeight.value][event.deltaMode] ?? 1
+        throwBox(event.deltaX * unit, event.deltaY * unit)
+      }
+    },
+    { passive: true },
+  )
 
   useEventListener('scroll', follow, { passive: true })
 
@@ -734,27 +812,42 @@ export default function useBoxTurn(
   // scrolling down does.
   let touch: Point | undefined
 
-  useEventListener('touchstart', (event: TouchEvent) => {
-    const finger = event.touches[0]
-    touch = event.touches.length === 1 && finger && !(event.target as Element | null)?.closest?.('dialog') ? [finger.clientX, finger.clientY] : undefined
-  }, { passive: true })
+  useEventListener(
+    'touchstart',
+    (event: TouchEvent) => {
+      const finger = event.touches[0]
+      touch =
+        event.touches.length === 1 && finger && !(event.target as Element | null)?.closest?.('dialog')
+          ? [finger.clientX, finger.clientY]
+          : undefined
+    },
+    { passive: true },
+  )
 
-  useEventListener('touchmove', (event: TouchEvent) => {
-    const finger = event.touches[0]
+  useEventListener(
+    'touchmove',
+    (event: TouchEvent) => {
+      const finger = event.touches[0]
 
-    if (mode.value === 'autoplay' && touch && finger && !grab) {
-      throwBox(touch[0] - finger.clientX, touch[1] - finger.clientY, swipeSensitivity)
-      touch = [finger.clientX, finger.clientY]
-    }
-  }, { passive: true })
+      if (mode.value === 'autoplay' && touch && finger && !grab) {
+        throwBox(touch[0] - finger.clientX, touch[1] - finger.clientY, swipeSensitivity)
+        touch = [finger.clientX, finger.clientY]
+      }
+    },
+    { passive: true },
+  )
 
   // Leaving the window, which is the only time there's nothing on the other side.
-  useEventListener('pointerout', (event: PointerEvent) => {
-    if (mode.value === 'follow' && !event.relatedTarget && !grab) {
-      client = undefined
-      moveTo(0, 0, leaveSpring)
-    }
-  }, { passive: true })
+  useEventListener(
+    'pointerout',
+    (event: PointerEvent) => {
+      if (mode.value === 'follow' && !event.relatedTarget && !grab) {
+        client = undefined
+        moveTo(0, 0, leaveSpring)
+      }
+    },
+    { passive: true },
+  )
 
   // Grabbing the box stops it dead, and it turns with the pointer as if its front were stuck to it, a quarter turn for
   // every width dragged. Only sideways drags grab it by touch, so the page still scrolls, and they can start anywhere on
@@ -781,7 +874,8 @@ export default function useBoxTurn(
     isTumbling.value = true
   }
 
-  const canGrab = (event: PointerEvent) => mode.value && isVisible.value && event.isPrimary && event.button === 0 && !grab
+  const canGrab = (event: PointerEvent) =>
+    mode.value && isVisible.value && event.isPrimary && event.button === 0 && !grab
 
   useEventListener(target, 'pointerdown', (event: PointerEvent) => {
     if (!canGrab(event) || !target.value) {
@@ -811,7 +905,7 @@ export default function useBoxTurn(
 
   // Off the box, a touch only takes it once it's moved, as the browser cancels it first if it's a scroll, which then
   // leaves the box spinning.
-  let pending: { id: number, start: Point } | undefined
+  let pending: { id: number; start: Point } | undefined
 
   useEventListener(surface, 'pointerdown', (event: PointerEvent) => {
     if (canGrab(event) && event.pointerType !== 'mouse' && !target.value?.contains(event.target as Node | null)) {
@@ -819,28 +913,35 @@ export default function useBoxTurn(
     }
   })
 
-  useEventListener('pointermove', (event: PointerEvent) => {
-    if (pending?.id === event.pointerId && Math.hypot(event.clientX - pending.start[0], event.clientY - pending.start[1]) >= GRAB_SLOP) {
-      startGrab(event, pending.start, false)
-      pending = undefined
-    }
+  useEventListener(
+    'pointermove',
+    (event: PointerEvent) => {
+      if (
+        pending?.id === event.pointerId &&
+        Math.hypot(event.clientX - pending.start[0], event.clientY - pending.start[1]) >= GRAB_SLOP
+      ) {
+        startGrab(event, pending.start, false)
+        pending = undefined
+      }
 
-    if (!grab || event.pointerId !== grab.id) {
-      return
-    }
+      if (!grab || event.pointerId !== grab.id) {
+        return
+      }
 
-    if (!grab.moved && Math.hypot(event.clientX - grab.start[0], event.clientY - grab.start[1]) < GRAB_SLOP) {
-      return
-    }
+      if (!grab.moved && Math.hypot(event.clientX - grab.start[0], event.clientY - grab.start[1]) < GRAB_SLOP) {
+        return
+      }
 
-    // Down rolls the front down and right turns it right, the other way to a scroll, which moves the page the other way.
-    const gain = (Math.PI / 2) / Math.max(1, grab.rect.width)
-    const turned: Vec3 = [(event.clientY - grab.last[1]) * gain, (event.clientX - grab.last[0]) * gain, 0]
-    tumble = multiply(fromAxisAngle(turned), tumble)
-    grab.turned = grab.turned.map((v, i) => v + turned[i]!) as Vec3
-    grab.last = [event.clientX, event.clientY]
-    grab.moved = true
-  }, { passive: true })
+      // Down rolls the front down and right turns it right, the other way to a scroll, which moves the page the other way.
+      const gain = Math.PI / 2 / Math.max(1, grab.rect.width)
+      const turned: Vec3 = [(event.clientY - grab.last[1]) * gain, (event.clientX - grab.last[0]) * gain, 0]
+      tumble = multiply(fromAxisAngle(turned), tumble)
+      grab.turned = grab.turned.map((v, i) => v + turned[i]!) as Vec3
+      grab.last = [event.clientX, event.clientY]
+      grab.moved = true
+    },
+    { passive: true },
+  )
 
   // Let go with a release, a cancel when the browser takes over, or the pointer lost some other way, whose position can't
   // be trusted, so it's only ever thrown and never pokes.
@@ -870,7 +971,13 @@ export default function useBoxTurn(
     }
     // Clicked at rest, or all but landed after a throw, it spins the next way, as it does without a cursor. Any face looks
     // the same at rest, so the face it's nearly on becomes the front, and what's left of the landing settles under the spin.
-    else if (!moved && how === 'up' && isOnBox && event.pointerType === 'mouse' && nearest(tumble, facing()).angle < SPIN_NEAR) {
+    else if (
+      !moved &&
+      how === 'up' &&
+      isOnBox &&
+      event.pointerType === 'mouse' &&
+      nearest(tumble, facing()).angle < SPIN_NEAR
+    ) {
       const around = facing()
       const face = multiply(multiply(around, nearest(tumble, around).symmetry), transpose(around))
       tumble = multiply(tumble, transpose(face))
@@ -881,15 +988,17 @@ export default function useBoxTurn(
       }
 
       startSpin()
-    }
-    else if (!moved && how === 'up' && isOnBox) {
+    } else if (!moved && how === 'up' && isOnBox) {
       // The front rolls the way the poked edge does as it's pushed away, so from the centre out to where it was poked.
       const px = (x - (rect.left + rect.width / 2)) / Math.max(1, rect.width / 2)
       const py = (y - (rect.top + rect.height / 2)) / Math.max(1, rect.height / 2)
       const off = Math.hypot(px, py)
-      const way: Point = off < POKE_CENTRE
-        ? (Math.random() < 0.5 ? [Math.sign(Math.random() - 0.5), 0] : [0, Math.sign(Math.random() - 0.5)])
-        : [py / off, px / off]
+      const way: Point =
+        off < POKE_CENTRE
+          ? Math.random() < 0.5
+            ? [Math.sign(Math.random() - 0.5), 0]
+            : [0, Math.sign(Math.random() - 0.5)]
+          : [py / off, px / off]
       // Fast enough to coast a quarter turn before it lands.
       const speed = (Math.PI / 2) * decay
       spinVelocity.splice(0, 3, way[0] * speed, way[1] * speed, 0)
@@ -902,8 +1011,7 @@ export default function useBoxTurn(
     if (mode.value === 'follow' && (x < 0 || y < 0 || x >= windowWidth.value || y >= windowHeight.value)) {
       client = undefined
       moveTo(0, 0, leaveSpring)
-    }
-    else {
+    } else {
       follow()
     }
   }

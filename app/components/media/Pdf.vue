@@ -10,7 +10,7 @@ const { src } = defineProps<Props>()
 const root = useTemplateRef('root')
 const images = useTemplateRef<HTMLImageElement[]>('images')
 
-const pages = ref<{ width: number, height: number }[]>([])
+const pages = ref<{ width: number; height: number }[]>([])
 const hasError = ref(false)
 
 let loadingTask: PDFDocumentLoadingTask | null = null
@@ -35,9 +35,10 @@ const scrollParent = (el: HTMLElement): HTMLElement | null => {
 }
 
 // JPEG: encodes fast in every browser, and pages are opaque so nothing is lost.
-const toBlob = (canvas: HTMLCanvasElement): Promise<Blob> => new Promise((resolve, reject) => {
-  canvas.toBlob(blob => (blob ? resolve(blob) : reject(new Error('Failed to encode PDF page'))), 'image/jpeg', 0.9)
-})
+const toBlob = (canvas: HTMLCanvasElement): Promise<Blob> =>
+  new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Failed to encode PDF page'))), 'image/jpeg', 0.9)
+  })
 
 // Draws the page on a throwaway canvas and hands it to the <img> as an encoded image, so the DOM only holds images
 // the browser can discard when off screen, rather than live canvases pinned in memory.
@@ -58,15 +59,15 @@ const renderPage = async (pdf: PDFDocumentProxy, img: HTMLImageElement, pageNumb
 
     objectUrls.push(url)
     img.src = url
-  }
-  finally {
+  } finally {
     canvas.width = 0
     canvas.height = 0
     page.cleanup()
   }
 
   // Decode off the queue: the next page can start drawing while this one decodes.
-  img.decode()
+  img
+    .decode()
     .catch(() => {})
     .finally(() => {
       // Only start the fade once there are pixels to show.
@@ -90,43 +91,47 @@ onMounted(async () => {
 
     // Read every page's size up front so placeholders reserve the full scroll height before anything renders.
     const viewports = await Promise.all(
-      Array.from({ length: pdf.numPages }, (_, index) => pdf.getPage(index + 1).then(page => page.getViewport({ scale: 1 }))),
+      Array.from({ length: pdf.numPages }, (_, index) =>
+        pdf.getPage(index + 1).then((page) => page.getViewport({ scale: 1 })),
+      ),
     )
 
     pages.value = viewports.map(({ width, height }) => ({ width: Math.round(width), height: Math.round(height) }))
 
     await nextTick()
 
-    observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) {
-          continue
+    observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) {
+            continue
+          }
+
+          const img = entry.target as HTMLImageElement
+
+          observer?.unobserve(img)
+
+          queue = queue
+            .then(() => renderPage(pdf, img, Number(img.dataset.page)))
+            .then(() => {
+              // Every page is an image now, so pdf.js (its worker and the parsed document) is no longer needed.
+              if (++renderedCount === pdf.numPages) {
+                observer?.disconnect()
+                loadingTask?.destroy()
+                loadingTask = null
+              }
+            })
+            .catch(fail)
         }
+      },
+      {
+        root: root.value ? scrollParent(root.value) : null,
+        rootMargin: '100% 0px',
+      },
+    )
 
-        const img = entry.target as HTMLImageElement
-
-        observer?.unobserve(img)
-
-        queue = queue
-          .then(() => renderPage(pdf, img, Number(img.dataset.page)))
-          .then(() => {
-            // Every page is an image now, so pdf.js (its worker and the parsed document) is no longer needed.
-            if (++renderedCount === pdf.numPages) {
-              observer?.disconnect()
-              loadingTask?.destroy()
-              loadingTask = null
-            }
-          })
-          .catch(fail)
-      }
-    }, {
-      root: root.value ? scrollParent(root.value) : null,
-      rootMargin: '100% 0px',
-    })
-
-    images.value?.forEach(img => observer?.observe(img))
-  }
-  catch (error) {
+    images.value?.forEach((img) => observer?.observe(img))
+  } catch (error) {
     fail(error)
   }
 })
@@ -134,7 +139,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   observer?.disconnect()
   loadingTask?.destroy()
-  objectUrls.forEach(url => URL.revokeObjectURL(url))
+  objectUrls.forEach((url) => URL.revokeObjectURL(url))
 })
 </script>
 
@@ -149,7 +154,8 @@ onBeforeUnmount(() => {
         :href="src"
         target="_blank"
         class="underline"
-      >Open it in a new tab</a>
+        >Open it in a new tab</a
+      >
     </p>
 
     <p
@@ -175,7 +181,7 @@ onBeforeUnmount(() => {
         :alt="`Page ${index + 1} of ${pages.length}`"
         decoding="async"
         class="block w-full h-auto opacity-0 blur-sm transition-[opacity,filter] duration-1000 ease-outQuint data-rendered:opacity-100 data-rendered:blur-none motion-reduce:blur-none motion-reduce:duration-300 outline outline-current/20 rounded-[2px]"
-      >
+      />
     </div>
   </div>
 </template>

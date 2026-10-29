@@ -5,10 +5,7 @@ const pdfBytes = new Map<string, Promise<ArrayBuffer>>()
 
 // Memoised so a hover/focus preload and the viewer share one download of pdf.js and its worker.
 const loadPdfjs = (): Promise<Pdfjs> => {
-  pdfjs ??= Promise.all([
-    import('pdfjs-dist'),
-    import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
-  ])
+  pdfjs ??= Promise.all([import('pdfjs-dist'), import('pdfjs-dist/build/pdf.worker.min.mjs?url')])
     .then(([lib, { default: workerSrc }]) => {
       lib.GlobalWorkerOptions.workerSrc = workerSrc
 

@@ -20,7 +20,13 @@ const cell = useTemplateRef('cell')
 const image = useTemplateRef('image')
 const imageEl = computed<HTMLElement | null>(() => image.value?.$el ?? null)
 const imageClip = useBoxTurn(cell, imageEl, {
-  shape: [[0.3, 0], [1, 0], [1, 1], [0, 1], [0, 0.18]],
+  shape: [
+    [0.3, 0],
+    [1, 0],
+    [1, 1],
+    [0, 1],
+    [0, 0.18],
+  ],
   scale: imageScale,
   drift: imageDrift,
   surface: container,
@@ -33,7 +39,9 @@ const imageClip = useBoxTurn(cell, imageEl, {
     v-editable="block"
     class="block-hero relative grid min-h-svh motion-safe:touch-pan-y motion-safe:touch-pinch-zoom py-[calc(var(--app-gutter-outer)*4)] md:py-(--app-gutter-outer) overflow-hidden"
   >
-    <div class="wrapper grid md:max-w-(--max-w) md:mx-auto grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] content-center gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0 md:grid-rows-[1fr_auto_1fr]">
+    <div
+      class="wrapper grid md:max-w-(--max-w) md:mx-auto grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] content-center gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0 md:grid-rows-[1fr_auto_1fr]"
+    >
       <h1 class="sr-only">The Loft EC1</h1>
 
       <TheLoftSvg
@@ -45,7 +53,7 @@ const imageClip = useBoxTurn(cell, imageEl, {
         v-if="block.image?.filename"
         ref="cell"
         class="relative row-start-2 col-start-6 col-end-8 md:col-start-5 md:col-end-6 lg:col-start-4 lg:col-end-5 justify-self-center w-(--image-w) aspect-square select-none motion-safe:touch-pan-y motion-safe:touch-pinch-zoom motion-safe:pointer-fine:cursor-grab"
-        :style="{ '--image-scale': imageScale, '--image-drift': imageDrift, 'clipPath': imageClip }"
+        :style="{ '--image-scale': imageScale, '--image-drift': imageDrift, clipPath: imageClip }"
       >
         <NuxtImg
           ref="image"
@@ -96,7 +104,9 @@ const imageClip = useBoxTurn(cell, imageEl, {
   --the-loft-w: calc(115.87 * var(--fluid-px));
   --ec1-w: calc(var(--the-loft-w) * var(--ec1-vb-w) / var(--the-loft-vb-w));
   /* Negative margin that drops the-loft so the top of the "o" meets the top of the image. */
-  --the-loft-o-offset: calc(var(--the-loft-w) * (var(--the-loft-vb-o-top) - var(--the-loft-vb-h)) / var(--the-loft-vb-w));
+  --the-loft-o-offset: calc(
+    var(--the-loft-w) * (var(--the-loft-vb-o-top) - var(--the-loft-vb-h)) / var(--the-loft-vb-w)
+  );
   --ec1-offset: calc(40 * var(--fluid-px));
   /* Fills its two-column grid area, up to 130px. */
   --image-w: min(100%, 130px);

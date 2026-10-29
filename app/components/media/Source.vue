@@ -28,5 +28,5 @@ const cSizes = computed(() => {
     :media="media"
     :srcset="cSizes.srcset"
     :sizes="cSizes.sizes"
-  >
+  />
 </template>

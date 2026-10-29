@@ -6,46 +6,51 @@ const isSpa = process.env.IS_SPA === 'true'
 
 export default defineNuxtConfig({
   modules: [
-    ['@nuxtjs/seo', {
-      sitemap: {
-        excludeAppSources: true,
-        sources: [
-          '/api/sitemap',
-        ],
-      }
-    }],
-    ['@nuxt/image', {
-      provider: 'storyblok',
-      storyblok: {
-        baseURL: 'https://a2.storyblok.com',
-        modifiers: {
-          smart: true,
+    [
+      '@nuxtjs/seo',
+      {
+        sitemap: {
+          excludeAppSources: true,
+          sources: ['/api/sitemap'],
         },
       },
-      format: ['webp'],
-      domains: ['storyblok.com', 'raw.london'],
-      quality: 85,
-      screens: {
-        '2xs': 375,
-        'xs': 480,
-        'sm': 600,
-        'md': 800,
-        'lg': 1200,
-        'xl': 1440,
-        '2xl': 1800,
-      }
-    }],
-    ['@storyblok/nuxt', {
-      accessToken: process.env.NUXT_STORYBLOK_TOKEN
-    }],
+    ],
+    [
+      '@nuxt/image',
+      {
+        provider: 'storyblok',
+        storyblok: {
+          baseURL: 'https://a2.storyblok.com',
+          modifiers: {
+            smart: true,
+          },
+        },
+        format: ['webp'],
+        domains: ['storyblok.com', 'raw.london'],
+        quality: 85,
+        screens: {
+          '2xs': 375,
+          xs: 480,
+          sm: 600,
+          md: 800,
+          lg: 1200,
+          xl: 1440,
+          '2xl': 1800,
+        },
+      },
+    ],
+    [
+      '@storyblok/nuxt',
+      {
+        accessToken: process.env.NUXT_STORYBLOK_TOKEN,
+      },
+    ],
     'nuxt-ai-ready',
     '@nuxt/fonts',
     '@vueuse/nuxt',
   ],
   fonts: {
-    families: [
-      { name: 'EB Garamond', provider: 'google', weights: [400], styles: ['italic'] },
-    ],
+    families: [{ name: 'EB Garamond', provider: 'google', weights: [400], styles: ['italic'] }],
   },
   ssr: !isSpa,
   devtools: false,
@@ -61,7 +66,7 @@ export default defineNuxtConfig({
         { name: 'msapplication-TileColor', content: '#284390' },
         { name: 'theme-color', content: '#284390' },
         { name: 'apple-mobile-web-app-title', content: 'The Loft' },
-        { 'http-equiv': 'content-language', 'content': 'en-GB' },
+        { 'http-equiv': 'content-language', content: 'en-GB' },
       ],
       link: [
         { rel: 'manifest', href: '/site.webmanifest' },
@@ -106,11 +111,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-02-10',
   vite: {
     optimizeDeps: {
-      include: [
-        '@storyblok/vue',
-        '@tiptap/core',
-        'tailwind-merge',
-      ],
+      include: ['@storyblok/vue', '@tiptap/core', 'tailwind-merge'],
     },
     plugins: [
       tailwindcss(),

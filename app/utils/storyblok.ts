@@ -7,22 +7,9 @@ import type { LocationQuery } from 'vue-router'
 
 const isVisualEditor = (search: LocationQuery) => '_storyblok' in search
 
-const imageExtensions = [
-  'jpg',
-  'jpeg',
-  'png',
-  'gif',
-  'webp',
-  'bmp',
-  'svg',
-  'avif',
-]
+const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'avif']
 
-const videoExtensions = [
-  'mp4',
-  'webm',
-  'ogg'
-]
+const videoExtensions = ['mp4', 'webm', 'ogg']
 
 const storyblokAssetType = (filename: string): 'image' | 'video' | 'other' => {
   if (typeof filename !== 'string' || !filename?.trim().length) {
@@ -33,8 +20,7 @@ const storyblokAssetType = (filename: string): 'image' | 'video' | 'other' => {
 
   if (imageExtensions.includes(ext)) {
     return 'image'
-  }
-  else if (videoExtensions.includes(ext)) {
+  } else if (videoExtensions.includes(ext)) {
     return 'video'
   }
 
@@ -54,19 +40,22 @@ const storyblokPdf = (link: MultilinkFieldValue | undefined): string | null => {
 // a.storyblok.com sends no CORS headers, a2.storyblok.com does. Needed for fetching assets from JS (e.g. pdf.js).
 const storyblokCorsUrl = (url: string): string => url.replace('//a.storyblok.com/', '//a2.storyblok.com/')
 
-const storyblokRichTextContent = (richtext: StoryblokRichtext | undefined): boolean => Boolean(richtext?.content?.[0]?.content?.length)
+const storyblokRichTextContent = (richtext: StoryblokRichtext | undefined): boolean =>
+  Boolean(richtext?.content?.[0]?.content?.length)
 
-const storyblokSlug = (path: string): string => ['', '/'].includes(path) ? '/home' : path.replace(/\/+$/, '')
+const storyblokSlug = (path: string): string => (['', '/'].includes(path) ? '/home' : path.replace(/\/+$/, ''))
 
 const isImageComponent = (media: Image): media is Image => media.component === 'image'
 
 type ContentTypes = Page
 
-const isPage = (
-  story: ISbStoryData<ContentTypes> | null | undefined,
-): story is ISbStoryData<Page> => Boolean(story?.content?.component === 'page')
+const isPage = (story: ISbStoryData<ContentTypes> | null | undefined): story is ISbStoryData<Page> =>
+  Boolean(story?.content?.component === 'page')
 
-const storyblokImage = (filename: string | null | undefined, modifiers?: Partial<ImageModifiers> | undefined): string => {
+const storyblokImage = (
+  filename: string | null | undefined,
+  modifiers?: Partial<ImageModifiers> | undefined,
+): string => {
   const image = useImage()
 
   const path = image(filename ?? '', {
@@ -82,7 +71,7 @@ const storyblokImage = (filename: string | null | undefined, modifiers?: Partial
   return path
 }
 
-const storyblokImageDimensions = (filename: string | null | undefined): { width: number, height: number } => {
+const storyblokImageDimensions = (filename: string | null | undefined): { width: number; height: number } => {
   if (!filename?.length) {
     return {
       width: 0,

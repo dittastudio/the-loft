@@ -27,11 +27,10 @@ const sync = async (value: boolean) => {
     if (!el.open) {
       el.showModal()
     }
-  }
-  else if (el.open && !('closing' in el.dataset)) {
+  } else if (el.open && !('closing' in el.dataset)) {
     el.dataset.closing = ''
 
-    await Promise.allSettled(el.getAnimations({ subtree: true }).map(animation => animation.finished))
+    await Promise.allSettled(el.getAnimations({ subtree: true }).map((animation) => animation.finished))
 
     // Reopened mid-exit: the reverse transition has already taken over.
     if (open.value) {

@@ -10,7 +10,7 @@ const { block } = defineProps<Props>()
 
 <template>
   <div v-editable="block">
-    <StoryblokText 
+    <StoryblokText
       v-if="storyblokRichTextContent(block.text)"
       :html="block.text"
     />

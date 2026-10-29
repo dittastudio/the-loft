@@ -11,7 +11,7 @@ type Item = NonNullable<Props['items']>[number]
 
 const isPdfOpen = ref(false)
 // Set on first open and kept, so the viewer stays mounted and reopening is instant.
-const pdf = ref<{ src: string, title: string } | null>(null)
+const pdf = ref<{ src: string; title: string } | null>(null)
 
 const onClick = (event: MouseEvent, item: Item) => {
   const src = storyblokPdf(item.link)
@@ -47,7 +47,9 @@ const onIntent = (item: Item) => {
     class="fixed inset-x-0 top-0 z-10 pointer-events-none"
   >
     <div class="wrapper pt-(--app-gutter-outer)">
-      <ul class="flex flex-row-reverse justify-between md:flex-col md:items-end pointer-events-auto font-sans text-right text-20 leading-[1.1] lowercase">
+      <ul
+        class="flex flex-row-reverse justify-between md:flex-col md:items-end pointer-events-auto font-sans text-right text-20 leading-[1.1] lowercase"
+      >
         <li
           v-for="item in items"
           :key="item._uid"

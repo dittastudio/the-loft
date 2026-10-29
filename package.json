@@ -1,8 +1,8 @@
 {
   "name": "the-loft",
-  "type": "module",
   "private": true,
   "author": "ditta",
+  "type": "module",
   "scripts": {
     "sb:schema-init": "storyblok schema init --space 296151434062627",
     "sb:schema-validate": "storyblok schema validate .storyblok/schema/schema.ts",

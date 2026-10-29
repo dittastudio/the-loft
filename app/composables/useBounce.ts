@@ -42,28 +42,34 @@ export default function useBounce(
   const reducedMotion = usePreferredReducedMotion()
   const isVisible = useElementVisibility(container)
 
-  const { pause, resume } = useRafFn(({ delta }) => {
-    // Cap the step so returning to a background tab doesn't cause a jump.
-    const step = Math.min(delta / 1000, 0.05)
+  const { pause, resume } = useRafFn(
+    ({ delta }) => {
+      // Cap the step so returning to a background tab doesn't cause a jump.
+      const step = Math.min(delta / 1000, 0.05)
 
-    x += vx * step
-    y += vy * step
+      x += vx * step
+      y += vy * step
 
-    if (x <= 0 || x >= maxX) {
-      vx *= -1
-      x = Math.min(Math.max(x, 0), maxX)
-    }
+      if (x <= 0 || x >= maxX) {
+        vx *= -1
+        x = Math.min(Math.max(x, 0), maxX)
+      }
 
-    if (y <= 0 || y >= maxY) {
-      vy *= -1
-      y = Math.min(Math.max(y, 0), maxY)
-    }
+      if (y <= 0 || y >= maxY) {
+        vy *= -1
+        y = Math.min(Math.max(y, 0), maxY)
+      }
 
-    render()
-  }, { immediate: false })
+      render()
+    },
+    { immediate: false },
+  )
 
   // Hidden tabs get no frames anyway, so only being offscreen needs checking.
-  watch(() => isReady.value && isVisible.value && reducedMotion.value !== 'reduce', isRunning => isRunning ? resume() : pause())
+  watch(
+    () => isReady.value && isVisible.value && reducedMotion.value !== 'reduce',
+    (isRunning) => (isRunning ? resume() : pause()),
+  )
 
   useResizeObserver([container, target], measure)
   useEventListener('resize', measure, { passive: true })
@@ -74,7 +80,7 @@ export default function useBounce(
     x = Math.random() * maxX
     y = Math.random() * maxY
 
-    const angle = (Math.PI / 4) + (Math.floor(Math.random() * 4) * (Math.PI / 2)) // a random diagonal
+    const angle = Math.PI / 4 + Math.floor(Math.random() * 4) * (Math.PI / 2) // a random diagonal
     vx = Math.cos(angle) * speed
     vy = Math.sin(angle) * speed
 

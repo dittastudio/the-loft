@@ -8,9 +8,8 @@ interface Props {
 
 const { error } = defineProps<Props>()
 
-const message = computed(() => error?.statusCode && error?.statusMessage
-  ? `${error?.statusCode} ${error?.statusMessage}`
-  : 'an unexpected error',
+const message = computed(() =>
+  error?.statusCode && error?.statusMessage ? `${error?.statusCode} ${error?.statusMessage}` : 'an unexpected error',
 )
 
 useHead({
