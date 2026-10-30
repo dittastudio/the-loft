@@ -12,7 +12,7 @@ The Loft (the-loft.com): a Nuxt 4 marketing site with content from Storyblok, pr
 - `npx vp fmt` and `npx vp lint` run the format and lint steps on their own.
 - There is no test suite.
 
-Commits must follow Conventional Commits (commitlint runs on `commit-msg`), e.g. `fix: ...`, `feat: ...`.
+Commits must follow Conventional Commits (commitlint runs on `commit-msg`), e.g. `fix: ...`, `feat(scope): ...`. Types are limited to `feat`, `fix`, `chore`, `refactor`, `style`, `perf`, `docs`, `test`, and the header and every body line must be 72 characters or fewer.
 
 Environment variables (see `.env.example`): `NUXT_STORYBLOK_TOKEN`, `NUXT_STORYBLOK_VERSION` (`draft` or `published`), and `IS_SPA`. Setting `IS_SPA=true` turns off SSR, prerendering and link crawling.
 
