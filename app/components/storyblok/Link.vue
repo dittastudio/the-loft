@@ -29,12 +29,12 @@ const isActiveLink = computed(() => {
   return route.path === href || (href !== '/' && route.path.startsWith(`${href}/`))
 })
 
-const attributes = {
+const attributes = computed(() => ({
   title: 'title' in item ? item.title : undefined,
   rel: 'rel' in item ? item.rel : undefined,
   to: determineHref(item),
   target: (item?.target ?? (item?.linktype === 'asset' ? '_blank' : undefined)) || null,
-}
+}))
 </script>
 
 <template>
