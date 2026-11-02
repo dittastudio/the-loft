@@ -1,2 +1,12 @@
 [build.processing.html]
 pretty_urls = false
+
+# develop is the Storyblok preview: a client-rendered site that reads draft content, so saved edits show on reload
+# without a rebuild. The token is set per branch in the Netlify UI. The SPA fallback is added here rather than in
+# public/_redirects because that file also ships to production, where it would turn real 404s into 200s.
+[context.develop]
+command = "npm run generate && printf '/* /200.html 200\n' >> .output/public/_redirects"
+
+[context.develop.environment]
+IS_SPA = "true"
+NUXT_STORYBLOK_VERSION = "draft"

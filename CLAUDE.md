@@ -16,6 +16,12 @@ Commits must follow Conventional Commits (commitlint runs on `commit-msg`), e.g.
 
 Environment variables (see `.env.example`): `NUXT_STORYBLOK_TOKEN`, `NUXT_STORYBLOK_VERSION` (`draft` or `published`), and `IS_SPA`. Setting `IS_SPA=true` turns off SSR, prerendering and link crawling.
 
+## Branches and deploys
+
+- `develop` is the default branch for PRs and the Storyblok Visual Editor preview. Its Netlify deploy runs as an SPA on draft content with the Preview token, so saved edits show on reload without a rebuild. `netlify.toml` holds its build settings; the token is set per branch in the Netlify UI.
+- `main` is production: prerendered, published content, Public token. Every token ends up in the client bundle, so production must never use the Preview token.
+- All builds are noindexed until the official domain is added, through `robots` in `app/app.vue` and `site.indexable` in `nuxt.config.ts`. The comment in `app.vue` says what to change.
+
 ## Storyblok schema as code
 
 Storyblok components are defined in TypeScript in `.storyblok/schema/`, not in the Storyblok UI:
