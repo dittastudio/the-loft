@@ -128,7 +128,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-02-10',
   vite: {
     optimizeDeps: {
-      include: ['@storyblok/vue', '@tiptap/core', 'pdfjs-dist', 'tailwind-merge'],
+      include: ['@storyblok/vue', '@tiptap/core', 'pdfjs-dist/legacy/build/pdf.mjs', 'tailwind-merge'],
     },
     plugins: [
       tailwindcss(),
