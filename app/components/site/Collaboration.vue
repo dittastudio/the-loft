@@ -132,6 +132,12 @@ useEventListener(viewport, ['resize', 'scroll'], hush, { passive: true })
     opacity 0.5s --theme(--ease-outSine);
 }
 
+/* Left out of the hero's intro, fading in on its usual transition once it's over. */
+:root:has(.block-hero[data-intro]) .site-collaboration {
+  opacity: 0;
+  transition: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .site-collaboration,
   :root:has(.ui-modal[open]:not([data-closing])) .site-collaboration,

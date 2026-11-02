@@ -49,6 +49,8 @@ Storyblok components are defined in TypeScript in `.storyblok/schema/`, not in t
 
 `useBoxTurn` (`app/composables/useBoxTurn.ts`) drives the hero image. It computes a `clip-path` that draws a rotating 3D cube outline. The cube follows the cursor, spins on its own when idle, tumbles when the page scrolls or is swiped, and can be dragged or poked. The pure geometry it relies on (matrices, perspective projection, blending of convex shapes) lives in `app/utils/boxTurn/geometry.ts`, which has no Vue dependencies. Every option and constant has an inline comment describing its units and meaning; keep that style when you change them.
 
+On each full page load `app/components/block/Hero.vue` plays `spinIn()`, a spin like the idle ones that ignores input, while its CSS scales and fades in the cell and brings the two logos into focus. `data-intro` on the hero holds the phase, which `SiteCollaboration` also waits on through `:has()`. CSS hides the cell and logos from first paint and reveals them after 4s if JS never takes over. The intro is skipped under reduced motion and in the visual editor, and the image appears at rest if it takes over a second to decode.
+
 ## Formatting
 
 oxfmt formats the code: no semicolons, single quotes, one attribute per line in Vue templates, and a 120-character line width. It skips `.storyblok/`.

@@ -42,7 +42,7 @@ interface BoxTurnOptions {
   rest?: number // ms between spins, without a cursor
   scroll?: ScrollOptions // how the box tumbles the way the page is scrolled
   surface?: Ref<HTMLElement | null> // where a sideways swipe can grab it by touch, as well as the box itself
-  paused?: Ref<boolean> // while true, such as under a modal, it holds still and ignores input, carrying on once false
+  paused?: Readonly<Ref<boolean>> // while true, such as under a modal, it holds still and ignores input, carrying on once false
 }
 
 const GRAB_SLOP = 4 // px a press moves before it's a drag rather than a poke
@@ -96,6 +96,10 @@ export default function useBoxTurn(
     paused = shallowRef(false),
   }: BoxTurnOptions,
 ) {
+  // While `spinIn` plays, it ignores input but keeps drawing, unlike `paused`.
+  const isLocked = shallowRef(false)
+  const ignoresInput = computed(() => paused.value || isLocked.value)
+
   // Cell units to a percentage of the cell, reaching outside it as the box turns.
   const toClipPath = (points: Point[]) =>
     `polygon(${points.map((p) => p.map((v) => `${+(v * 100).toFixed(3)}%`).join(' ')).join(', ')})`
@@ -313,7 +317,7 @@ export default function useBoxTurn(
   }
 
   const throwBox = (dx: number, dy: number, turnsPer1000 = sensitivity) => {
-    if (!mode.value || !isVisible.value || grab || paused.value) {
+    if (!mode.value || !isVisible.value || grab || ignoresInput.value) {
       return
     }
 
@@ -458,7 +462,7 @@ export default function useBoxTurn(
   const leaveWindow = () => {
     client = undefined
 
-    if (mode.value !== 'follow' || paused.value) {
+    if (mode.value !== 'follow' || ignoresInput.value) {
       return
     }
 
@@ -560,6 +564,12 @@ export default function useBoxTurn(
       isSpinning.value = false
       settle = undefined
 
+      if (isLocked.value) {
+        isLocked.value = false
+        // The cursor may have moved while it was locked.
+        follow()
+      }
+
       if (mode.value === 'autoplay') {
         delay = rest
         schedule()
@@ -615,6 +625,7 @@ export default function useBoxTurn(
   watch(canRun, (isRunning) => (isRunning ? resume() : pause()))
 
   watch(mode, () => {
+    isLocked.value = false
     isSpinning.value = false
     isTumbling.value = false
     tumble = IDENTITY
@@ -636,7 +647,7 @@ export default function useBoxTurn(
 
   // Held, the box stays turned to wherever the cursor was when it was grabbed.
   const follow = () => {
-    if (mode.value !== 'follow' || !client || !target.value || grab || paused.value) {
+    if (mode.value !== 'follow' || !client || !target.value || grab || ignoresInput.value) {
       return
     }
 
@@ -746,7 +757,7 @@ export default function useBoxTurn(
   }
 
   const canGrab = (event: PointerEvent) =>
-    mode.value && isVisible.value && event.isPrimary && event.button === 0 && !grab
+    mode.value && isVisible.value && !ignoresInput.value && event.isPrimary && event.button === 0 && !grab
 
   useEventListener(target, 'pointerdown', (event: PointerEvent) => {
     if (!canGrab(event) || !target.value) {
@@ -888,5 +899,15 @@ export default function useBoxTurn(
   useEventListener('pointercancel', (event: PointerEvent) => release(event, 'cancel'), { passive: true })
   useEventListener('lostpointercapture', (event: PointerEvent) => release(event, 'lost'), { passive: true })
 
-  return restClip
+  // Starts a spin now that no input can touch, for the box's first appearance. Does nothing without motion.
+  const spinIn = () => {
+    if (mode.value) {
+      getBox()
+      unschedule()
+      isLocked.value = true
+      startSpin()
+    }
+  }
+
+  return { clip: restClip, spinIn }
 }

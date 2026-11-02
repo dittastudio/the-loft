@@ -18,7 +18,16 @@ const cell = useTemplateRef('cell')
 const image = useTemplateRef('image')
 const { isModalOpen } = useTopLayer()
 const imageEl = computed<HTMLElement | null>(() => image.value?.$el ?? null)
-const imageClip = useBoxTurn(cell, imageEl, {
+
+// The intro's look is all in the CSS, which this moves between waiting for the image and spinning in, then ends.
+const INTRO_DELAY = 300 // ms before it starts
+const INTRO_WAIT = 1000 // ms to wait for the image to decode before giving up and showing it at rest
+
+const route = useRoute()
+const introPhase = shallowRef<'waiting' | 'spinning' | undefined>(block.image?.filename ? 'waiting' : undefined)
+const isPaused = computed(() => isModalOpen.value || introPhase.value === 'waiting')
+
+const { clip: imageClip, spinIn } = useBoxTurn(cell, imageEl, {
   shape: [
     [0.3, 0],
     [1, 0],
@@ -30,7 +39,33 @@ const imageClip = useBoxTurn(cell, imageEl, {
   drift: imageDrift,
   surface: container,
   // Nothing of it shows under a modal, and repainting it there would make the modal's frost recompute its blur.
-  paused: isModalOpen,
+  paused: isPaused,
+})
+
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
+const isImageReady = (el: unknown) =>
+  Promise.race([
+    el instanceof HTMLImageElement
+      ? Promise.all([el.decode(), wait(INTRO_DELAY)]).then(
+          () => true,
+          () => false,
+        )
+      : false,
+    wait(INTRO_WAIT).then(() => false),
+  ])
+
+onMounted(async () => {
+  const canSpin =
+    !isVisualEditor(route.query) &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+    (await isImageReady(imageEl.value))
+
+  if (canSpin) {
+    spinIn()
+  }
+
+  introPhase.value = canSpin ? 'spinning' : undefined
 })
 </script>
 
@@ -38,6 +73,7 @@ const imageClip = useBoxTurn(cell, imageEl, {
   <div
     ref="container"
     v-editable="block"
+    :data-intro="introPhase"
     class="block-hero relative grid min-h-svh motion-safe:touch-pan-y motion-safe:touch-pinch-zoom py-[calc(var(--app-gutter-outer)*4)] md:py-(--app-gutter-outer) overflow-hidden"
   >
     <div
@@ -47,14 +83,15 @@ const imageClip = useBoxTurn(cell, imageEl, {
 
       <TheLoftSvg
         aria-hidden="true"
-        class="row-start-1 col-start-2 lg:col-start-1 col-end-[-1] justify-self-start w-(--the-loft-w) h-auto fill-current md:self-end md:mb-(--the-loft-o-offset)"
+        class="block-hero__logo row-start-1 col-start-2 lg:col-start-1 col-end-[-1] justify-self-start w-(--the-loft-w) h-auto fill-current md:self-end md:mb-(--the-loft-o-offset)"
       />
 
       <div
         v-if="block.image?.filename"
         ref="cell"
-        class="relative row-start-2 col-start-6 col-end-8 md:col-start-5 md:col-end-6 lg:col-start-4 lg:col-end-5 justify-self-center w-(--image-w) aspect-square select-none motion-safe:touch-pan-y motion-safe:touch-pinch-zoom motion-safe:pointer-fine:cursor-grab"
+        class="block-hero__cell relative row-start-2 col-start-6 col-end-8 md:col-start-5 md:col-end-6 lg:col-start-4 lg:col-end-5 justify-self-center w-(--image-w) aspect-square select-none motion-safe:touch-pan-y motion-safe:touch-pinch-zoom motion-safe:pointer-fine:cursor-grab"
         :style="{ '--image-scale': imageScale, '--image-drift': imageDrift, clipPath: imageClip }"
+        @animationend="introPhase = introPhase === 'spinning' ? undefined : introPhase"
       >
         <NuxtImg
           ref="image"
@@ -73,7 +110,7 @@ const imageClip = useBoxTurn(cell, imageEl, {
 
       <Ec1Svg
         aria-hidden="true"
-        class="row-start-3 col-start-4 md:col-start-3 lg:col-start-2 col-span-1 self-start justify-self-start md:justify-self-end w-(--ec1-w) h-auto mt-(--ec1-offset) fill-current"
+        class="block-hero__logo row-start-3 col-start-4 md:col-start-3 lg:col-start-2 col-span-1 self-start justify-self-start md:justify-self-end w-(--ec1-w) h-auto mt-(--ec1-offset) fill-current"
       />
     </div>
   </div>
@@ -115,6 +152,59 @@ const imageClip = useBoxTurn(cell, imageEl, {
 
   @variant xl {
     --fluid-px: calc(100vw / 1440);
+  }
+}
+
+/* The intro, which useBoxTurn's spinIn turns the box for. There's none to wait for when motion is reduced. */
+@media (prefers-reduced-motion: no-preference) {
+  .block-hero {
+    /* The same as the spins when idle, so the logos and the scale move as one with the turn. */
+    --intro-length: 2040ms;
+    --intro-ease: cubic-bezier(0.45, 0, 0.15, 1);
+  }
+
+  .block-hero__cell {
+    transition: opacity 0.4s --theme(--ease-outQuad);
+  }
+
+  .block-hero[data-intro] .block-hero__cell {
+    pointer-events: none;
+  }
+
+  .block-hero__logo {
+    transition:
+      opacity var(--intro-length) var(--intro-ease),
+      filter var(--intro-length) var(--intro-ease);
+  }
+
+  /* Hidden from first paint, so the prerendered resting shape never flashes, until JS moves on or never does. */
+  .block-hero[data-intro='waiting'] .block-hero__cell {
+    opacity: 0;
+    animation: block-hero-reveal 0s 4s forwards;
+  }
+
+  .block-hero[data-intro='waiting'] .block-hero__logo {
+    opacity: 0;
+    filter: blur(12px);
+    animation: block-hero-reveal 0s 4s forwards;
+  }
+
+  .block-hero[data-intro='spinning'] .block-hero__cell {
+    animation: block-hero-spin-in var(--intro-length) var(--intro-ease);
+  }
+
+  @keyframes block-hero-reveal {
+    to {
+      opacity: 1;
+      filter: none;
+    }
+  }
+
+  @keyframes block-hero-spin-in {
+    from {
+      opacity: 0;
+      scale: 0.5;
+    }
   }
 }
 </style>
