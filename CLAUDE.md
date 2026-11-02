@@ -18,7 +18,7 @@ Environment variables (see `.env.example`): `NUXT_STORYBLOK_TOKEN`, `NUXT_STORYB
 
 ## Branches and deploys
 
-- `develop` is the default branch for PRs and the Storyblok Visual Editor preview. Its Netlify deploy runs as an SPA on draft content with the Preview token, so saved edits show on reload without a rebuild. `netlify.toml` holds its build settings; the token is set per branch in the Netlify UI.
+- `develop` is the default branch for PRs and the Storyblok Visual Editor preview. Its Netlify deploy runs as an SPA on draft content with the Preview token, so saved edits show on reload without a rebuild. Its settings are environment variables per deploy context in the Netlify UI. On Netlify, Nitro's `netlify-static` preset outputs to `dist` and adds a `/* /404.html 404` fallback to `_redirects`, so deep links load the SPA with a 404 status.
 - `main` is production: prerendered, published content, Public token. Every token ends up in the client bundle, so production must never use the Preview token.
 - All builds are noindexed until the official domain is added, through `robots` in `app/app.vue` and `site.indexable` in `nuxt.config.ts`. The comment in `app.vue` says what to change.
 
