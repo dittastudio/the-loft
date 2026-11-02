@@ -65,7 +65,8 @@ const onCancel = (event: Event) => {
   open.value = false
 }
 
-// The scroller fills the viewport, so a click that lands on it directly (not its content) is a click on empty space.
+// The scroller fills the viewport and clicks pass through the content wrapper, so any click that lands on it directly
+// is a click on empty space. Slotted content opts out of this with `pointer-events-auto`.
 const onClick = (event: MouseEvent) => {
   if (event.target === event.currentTarget) {
     open.value = false
@@ -103,7 +104,7 @@ const onClick = (event: MouseEvent) => {
       class="ui-modal__scroller"
       @click="onClick"
     >
-      <div class="ui-modal__content pt-[calc(var(--app-gutter-outer)*2.2)]">
+      <div class="ui-modal__content pointer-events-none pt-[calc(var(--app-gutter-outer)*2.2)]">
         <slot />
       </div>
     </div>

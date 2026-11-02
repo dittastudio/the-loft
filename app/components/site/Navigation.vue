@@ -111,7 +111,7 @@ const onIntent = (item: PdfItem) => {
         v-if="pdf"
         :key="pdf.src"
         :src="pdf.src"
-        class="mx-auto max-w-3xl"
+        class="mx-auto max-w-3xl pointer-events-auto"
       />
     </div>
   </UiModal>
