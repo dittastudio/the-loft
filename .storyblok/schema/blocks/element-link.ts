@@ -17,6 +17,7 @@ export const elementLinkBlock = defineBlock({
       type: 'multilink',
       required: true,
       asset_link_type: true,
+      email_link_type: true,
       allow_target_blank: true,
     }),
   ],
