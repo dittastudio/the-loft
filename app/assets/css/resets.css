@@ -5,7 +5,7 @@
   }
 
   .is-storyblok-editor {
-    a {
+    a:not([data-editor-clickable]) {
       pointer-events: none !important;
     }
   }
