@@ -1,11 +1,16 @@
-type Pdfjs = typeof import('pdfjs-dist')
+// The legacy build, because the standard one calls newer APIs like Map.getOrInsertComputed without polyfills, so it
+// throws in browsers without them, such as Safari before 26.2.
+type Pdfjs = typeof import('pdfjs-dist/legacy/build/pdf.mjs')
 
 let pdfjs: Promise<Pdfjs> | null = null
 const pdfBytes = new Map<string, Promise<ArrayBuffer>>()
 
 // Memoised so a hover/focus preload and the viewer share one download of pdf.js and its worker.
 const loadPdfjs = (): Promise<Pdfjs> => {
-  pdfjs ??= Promise.all([import('pdfjs-dist'), import('pdfjs-dist/build/pdf.worker.min.mjs?url')])
+  pdfjs ??= Promise.all([
+    import('pdfjs-dist/legacy/build/pdf.mjs'),
+    import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'),
+  ])
     .then(([lib, { default: workerSrc }]) => {
       lib.GlobalWorkerOptions.workerSrc = workerSrc
 

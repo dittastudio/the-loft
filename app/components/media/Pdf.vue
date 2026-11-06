@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist'
+import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist/legacy/build/pdf.mjs'
 
 interface Props {
   src: string

@@ -16,7 +16,10 @@ useHead({
 
 useSeoMeta({
   titleTemplate: (title) => (title ? `${title} - The Loft` : 'The Loft'),
-  robots: 'index, follow',
+  // Nothing is indexed until the official domain is added. At that point, use 'index, follow' only when
+  // useRuntimeConfig().public.STORYBLOK_VERSION === 'published', and make site.indexable in nuxt.config.ts follow the
+  // same condition, so the develop draft preview stays noindexed.
+  robots: 'noindex, nofollow',
 })
 </script>
 

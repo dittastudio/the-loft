@@ -65,10 +65,12 @@ const onIntent = (item: PdfItem) => {
           :key="item._uid"
           v-editable="item"
         >
+          <!-- Clickable in the visual editor, as opening the modal is the only way to check a newly uploaded PDF. -->
           <a
             v-if="item.component === 'element_link_pdf'"
             :href="storyblokPdf(item.download) ?? storyblokPdf(item.preview) ?? undefined"
             :class="[linkClass, edgeClass(index)]"
+            data-editor-clickable
             @click="onClick($event, item)"
             @pointerenter="onIntent(item)"
             @focus="onIntent(item)"
@@ -109,7 +111,7 @@ const onIntent = (item: PdfItem) => {
         v-if="pdf"
         :key="pdf.src"
         :src="pdf.src"
-        class="mx-auto max-w-3xl"
+        class="mx-auto max-w-3xl pointer-events-auto"
       />
     </div>
   </UiModal>

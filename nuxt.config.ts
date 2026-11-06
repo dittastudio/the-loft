@@ -79,6 +79,9 @@ export default defineNuxtConfig({
   site: {
     url: 'https://the-loft.com',
     name: 'The Loft',
+    // Nothing is indexed until the official domain is added. See the robots comment in app/app.vue, which changes with
+    // this. It also covers the static HTML of the SPA build, which is served before app.vue runs.
+    indexable: false,
   },
   ogImage: {
     enabled: false,
@@ -100,11 +103,8 @@ export default defineNuxtConfig({
   alias: {
     '#storyblok-schema': fileURLToPath(new URL('./.storyblok/schema/schema', import.meta.url)),
   },
-  routeRules: {
-    '/**': {
-      prerender: !isSpa,
-    },
-  },
+  // No rule in SPA mode: `prerender: false` on every route would also stop Nuxt generating its HTML shells.
+  routeRules: isSpa ? {} : { '/**': { prerender: true } },
   nitro: {
     prerender: {
       crawlLinks: !isSpa,
@@ -128,7 +128,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-02-10',
   vite: {
     optimizeDeps: {
-      include: ['@storyblok/vue', '@tiptap/core', 'pdfjs-dist', 'tailwind-merge'],
+      include: ['@storyblok/vue', '@tiptap/core', 'pdfjs-dist/legacy/build/pdf.mjs', 'tailwind-merge'],
     },
     plugins: [
       tailwindcss(),
