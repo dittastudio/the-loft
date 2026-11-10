@@ -77,13 +77,13 @@ onMounted(async () => {
     class="block-hero relative grid min-h-svh motion-safe:touch-pan-y motion-safe:touch-pinch-zoom py-[calc(var(--app-gutter-outer)*4)] md:py-(--app-gutter-outer) overflow-hidden"
   >
     <div
-      class="wrapper grid md:max-w-(--max-w) md:mx-auto grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] content-center gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0 md:grid-rows-[1fr_auto_1fr]"
+      class="wrapper grid md:max-w-(--max-w) md:mx-auto grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] grid-rows-[minmax(var(--row-min),1fr)_auto_minmax(var(--row-min),1fr)] gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0"
     >
       <h1 class="sr-only">The Loft EC1</h1>
 
       <TheLoftSvg
         aria-hidden="true"
-        class="block-hero__logo row-start-1 col-start-2 lg:col-start-1 col-end-[-1] justify-self-start w-(--the-loft-w) h-auto fill-current md:self-end md:mb-(--the-loft-o-offset)"
+        class="block-hero__logo row-start-1 col-start-2 lg:col-start-1 col-end-[-1] self-end justify-self-start w-(--the-loft-w) h-auto fill-current md:mb-(--the-loft-l-offset)"
       />
 
       <div
@@ -116,42 +116,80 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
+<style>
 @reference "~/assets/css/app.css";
 
-.block-hero {
+/* On the root while the hero is on the page, so SiteNavigation can line its links up with the top of the box. */
+:root:has(.block-hero) {
   /* One design pixel: a fixed 1px below xl, then scales with the viewport from 1440px. */
   --fluid-px: 1px;
 
   /* SVG viewBox measurements. */
-  --the-loft-vb-w: 227;
-  --the-loft-vb-h: 296;
-  --the-loft-vb-o-top: 210.37; /* top of the "o" in "loft" */
-  --ec1-vb-w: 140;
+  --the-loft-vb-w: 420;
+  --the-loft-vb-h: 506;
+  --the-loft-vb-l-top: 283.63; /* top of the "l" in "loft" */
+  --ec1-vb-w: 258;
+  --ec1-vb-h: 223;
 
   /* ec1 derives from the-loft so the logo pair stays proportional. */
   --the-loft-w: calc(115.87 * var(--fluid-px));
   --ec1-w: calc(var(--the-loft-w) * var(--ec1-vb-w) / var(--the-loft-vb-w));
-  /* Negative margin that drops the-loft so the top of the "o" meets the top of the image. */
-  --the-loft-o-offset: calc(
-    var(--the-loft-w) * (var(--the-loft-vb-o-top) - var(--the-loft-vb-h)) / var(--the-loft-vb-w)
+  /* Negative margin that drops the-loft so the top of the "l" meets the top of the image. */
+  --the-loft-l-offset: calc(
+    var(--the-loft-w) * (var(--the-loft-vb-l-top) - var(--the-loft-vb-h)) / var(--the-loft-vb-w)
   );
   --ec1-offset: calc(40 * var(--fluid-px));
   /* Fills its two-column grid area, up to 130px. */
   --image-w: min(100%, 130px);
 
+  /* Heights the logos take up in the rows above and below the image. */
+  --the-loft-row-h: calc(var(--the-loft-w) * var(--the-loft-vb-h) / var(--the-loft-vb-w));
+  --ec1-row-h: calc(var(--the-loft-w) * var(--ec1-vb-h) / var(--the-loft-vb-w) + var(--ec1-offset));
+  /* Both outer rows share the taller one's height as a minimum, so the image stays centred at any viewport height. */
+  --row-min: max(var(--the-loft-row-h), var(--ec1-row-h));
+
   @variant md {
     --the-loft-w: calc(131.25 * var(--fluid-px));
     --ec1-offset: calc(80 * var(--fluid-px));
+    /* Only the part of the-loft above the top of the "l" sits in its row; the rest hangs beside the image. */
+    --the-loft-row-h: calc(var(--the-loft-w) * var(--the-loft-vb-l-top) / var(--the-loft-vb-w));
     /* The image sits in the single middle column of the 7-column grid. */
     --image-w: calc((100% + 2 * var(--app-gutter-inner)) * 1.25);
     /* The composition is capped to a centred box spanning site columns 3-9 at 1440 (874px of content), re-gridded into 7 columns. */
-    --app-columns: 7;
-    --max-w: calc(874 * var(--fluid-px) + 2 * var(--app-gutter-outer));
+    --hero-columns: 7;
+    --hero-content-w: calc(874 * var(--fluid-px));
+    --max-w: calc(var(--hero-content-w) + 2 * var(--app-gutter-outer));
+
+    /*
+      The box's distance from the top of the page, for an element as wide as the page that is a size container.
+      This is --image-w worked out from the container's width rather than its cell's. The hero is one screen tall
+      with the box centred in it, unless the screen is too short to fit the rows above it.
+    */
+    --hero-col-w: calc(
+      (
+          min(100cqw - 2 * var(--app-gutter-outer), var(--hero-content-w)) - (var(--hero-columns) - 1) *
+            var(--app-gutter-inner)
+        ) /
+        var(--hero-columns)
+    );
+    --hero-box-top: max(
+      50svh - (var(--hero-col-w) + 2 * var(--app-gutter-inner)) * 1.25 / 2,
+      var(--app-gutter-outer) + var(--row-min)
+    );
   }
 
   @variant xl {
     --fluid-px: calc(100vw / 1440);
+  }
+}
+</style>
+
+<style scoped>
+@reference "~/assets/css/app.css";
+
+.block-hero {
+  @variant md {
+    --app-columns: var(--hero-columns);
   }
 }
 

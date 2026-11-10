@@ -52,6 +52,11 @@ const POKE_CENTRE = 0.2 // how near the centre, as a fraction of the way to the 
 const FIRST_SPIN = 1200 // ms before the first spin, without a cursor
 const SPIN_NEAR = 0.25 // radians from a face a click can still spin the box rather than poke it
 const SETTLE = 700 // ms the spring easing a cancelled spin back to rest takes to swing once
+const SQUASH = 0.92 // scale the box squashes to while it's pressed
+const SQUASH_RESPONSE = 220 // ms the spring squashing it on a press takes to swing once
+const SQUASH_BOUNCE = 0.2 // how far that spring overshoots, 0 for none
+const WOBBLE_RESPONSE = 420 // ms the spring popping it back on release takes to swing once
+const WOBBLE_BOUNCE = 0.65 // how far that spring overshoots, so it wobbles past full size a few times like jelly
 
 // The ways the front sweeps on each spin in turn, as which way it goes around and over: top right to bottom left, bottom
 // right to top left, bottom left to top right, then top left to bottom right.
@@ -488,7 +493,7 @@ export default function useBoxTurn(
     isTumbling.value = true
   }
 
-  // Without a cursor, spin a three-quarter turn every so often, and with one, whenever the box is clicked. Every spin goes
+  // Without a cursor, spin a three-quarter turn every so often, and a half turn whenever the box is clicked. Every spin goes
   // diagonally, around and over at once, the next way in `DIAGONALS`, so the front sweeps from one corner to the other. A
   // cube looks the same every quarter turn, so it lands back on the resting shape without ever reversing, and the image
   // drifts the way the box is turning.
@@ -501,12 +506,16 @@ export default function useBoxTurn(
   let elapsed = 0
   let delay = FIRST_SPIN
   let progress = 0
+  let spinTurns = 0.75 // turns this spin makes
+  let spinLength = 0 // ms this spin takes, at the same pace whatever its turns
   let settle: { to: number; speed: number } | undefined // cancelled, springing back to rest from `progress`
 
   // No overshoot, so it never swings past either end of the spin.
   const settleSpring = springOf(SETTLE, 0)
 
-  const startSpin = () => {
+  const startSpin = (turns = 0.75) => {
+    spinTurns = turns
+    spinLength = ((duration * 1.7) / 0.75) * turns
     spin = DIAGONALS[nextSpin]!
     nextSpin = (nextSpin + 1) % DIAGONALS.length
     elapsed = 0
@@ -521,8 +530,8 @@ export default function useBoxTurn(
       return
     }
 
-    const t = elapsed / (duration * 1.7)
-    const speed = (easeSpin(Math.min(1, t + 1e-3)) - easeSpin(t)) / 1e-3 / ((duration * 1.7) / 1000)
+    const t = elapsed / spinLength
+    const speed = (easeSpin(Math.min(1, t + 1e-3)) - easeSpin(t)) / 1e-3 / (spinLength / 1000)
     settle = { to: progress < 0.5 ? 0 : 1, speed }
   }
 
@@ -550,12 +559,12 @@ export default function useBoxTurn(
       }
     } else {
       elapsed += delta
-      const t = Math.min(1, elapsed / (duration * 1.7))
+      const t = Math.min(1, elapsed / spinLength)
       progress = easeSpin(t)
       isDone = t >= 1
     }
 
-    const angle = progress * 0.75 * Math.PI * 2
+    const angle = progress * spinTurns * Math.PI * 2
     spinPose = turn(spin[0] * angle, spin[1] * angle)
     spinArc = isDone ? 0 : Math.max(0, Math.sin(Math.PI * progress))
     spinMorph = smoothstep(Math.max(0, Math.min(1, progress / 0.2, (1 - progress) / 0.2)))
@@ -577,6 +586,45 @@ export default function useBoxTurn(
     }
   }
 
+  // Pressing the box squashes it, and letting go pops it back on a bouncier spring so it wobbles like jelly as it spins
+  // or rolls away. Scaling the whole cell squashes the clip and the image together.
+  let squash = 1 // current scale
+  let squashSpeed = 0 // scale per second
+  let squashTo = 1
+  let pressedBy: number | undefined // the pointer holding it down
+  const isSquashSettled = shallowRef(true)
+  const squashSpring = springOf(SQUASH_RESPONSE, SQUASH_BOUNCE)
+  const wobbleSpring = springOf(WOBBLE_RESPONSE, WOBBLE_BOUNCE)
+
+  const press = (id: number | undefined) => {
+    pressedBy = id
+    squashTo = id === undefined ? 1 : SQUASH
+    isSquashSettled.value = false
+  }
+
+  const setSquash = (scale: number) => {
+    if (target.value) {
+      target.value.style.scale = scale === 1 ? '' : `${+scale.toFixed(4)}`
+    }
+  }
+
+  const squashing = (delta: number) => {
+    const { stiffness, damping } = pressedBy === undefined ? wobbleSpring : squashSpring
+
+    steps(delta, (dt) => {
+      squashSpeed += ((squashTo - squash) * stiffness - squashSpeed * damping) * dt
+      squash += squashSpeed * dt
+    })
+
+    if (Math.abs(squashTo - squash) < 1e-4 && Math.abs(squashSpeed) < 1e-3) {
+      squash = squashTo
+      squashSpeed = 0
+      isSquashSettled.value = true
+    }
+
+    setSquash(squash)
+  }
+
   // Start after a short wait. A spin cut short by scrolling away finishes first, and the next one carries on the sequence.
   watch(
     () => mode.value === 'autoplay' && isVisible.value && !isTumbling.value && !paused.value,
@@ -596,13 +644,20 @@ export default function useBoxTurn(
     () =>
       !paused.value &&
       isVisible.value &&
-      (isTumbling.value || isSpinning.value || (mode.value === 'follow' && (!isSettled.value || isFading.value))),
+      (isTumbling.value ||
+        isSpinning.value ||
+        !isSquashSettled.value ||
+        (mode.value === 'follow' && (!isSettled.value || isFading.value))),
   )
 
   const { pause, resume } = useRafFn(
     ({ delta }) => {
       // Cap the step so returning to a background tab doesn't cause a jump.
       const step = Math.min(delta, 50)
+
+      if (!isSquashSettled.value) {
+        squashing(step)
+      }
 
       if (isSpinning.value) {
         spinning(step)
@@ -638,8 +693,13 @@ export default function useBoxTurn(
     current.fill(0)
     velocity.fill(0)
     isSettled.value = true
+    pressedBy = undefined
+    squash = squashTo = 1
+    squashSpeed = 0
+    isSquashSettled.value = true
     setClip(restClip)
     setDrift(0, 0)
+    setSquash(1)
   })
 
   // Last cursor position, so scrolling the box under a still cursor counts too.
@@ -773,6 +833,7 @@ export default function useBoxTurn(
 
     // Held outside the window too.
     target.value.setPointerCapture(event.pointerId)
+    press(event.pointerId)
 
     // Mid-spin, a click or tap cancels it, so it only takes the box once it's dragged.
     if (isSpinning.value) {
@@ -828,6 +889,10 @@ export default function useBoxTurn(
   // Let go with a release, a cancel when the browser takes over, or the pointer lost some other way, whose position can't
   // be trusted, so it's only ever thrown and never pokes.
   const release = (event: PointerEvent, how: 'up' | 'cancel' | 'lost' = 'up') => {
+    if (pressedBy === event.pointerId) {
+      press(undefined)
+    }
+
     if (pending?.id === event.pointerId) {
       if (how === 'up' && pending.isOnBox) {
         cancelSpin()
@@ -851,7 +916,7 @@ export default function useBoxTurn(
     if (how === 'cancel') {
       spinVelocity.fill(0)
     }
-    // Clicked or tapped at rest, or all but landed after a throw, it spins the next way, as it does without a cursor. Any face looks
+    // Clicked or tapped at rest, or all but landed after a throw, it spins a half turn the next way. Any face looks
     // the same at rest, so the face it's nearly on becomes the front, and what's left of the landing settles under the spin.
     else if (!moved && how === 'up' && isOnBox && nearest(tumble, facing()).angle < SPIN_NEAR) {
       const around = facing()
@@ -863,7 +928,7 @@ export default function useBoxTurn(
         isTumbling.value = false
       }
 
-      startSpin()
+      startSpin(0.5)
     } else if (!moved && how === 'up' && isOnBox) {
       // The front rolls the way the poked edge does as it's pushed away, so from the centre out to where it was poked.
       const px = (x - (rect.left + rect.width / 2)) / Math.max(1, rect.width / 2)

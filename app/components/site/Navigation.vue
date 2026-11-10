@@ -54,9 +54,10 @@ const onIntent = (item: PdfItem) => {
   <nav
     v-if="items?.length"
     aria-label="Main"
-    class="fixed inset-x-0 top-0 z-10 pointer-events-none"
+    class="@container fixed inset-x-0 top-0 z-10 pointer-events-none"
   >
-    <div class="wrapper pt-(--app-gutter-outer)">
+    <!-- Level with the top of the hero's box on desktop, when there is one (its 100cqw is the page's width). -->
+    <div class="wrapper pt-(--app-gutter-outer) md:pt-[var(--hero-box-top,var(--app-gutter-outer))]">
       <ul
         class="flex flex-row-reverse justify-between md:flex-col md:items-end pointer-events-auto font-sans text-right text-20 leading-[1.1] lowercase"
       >
