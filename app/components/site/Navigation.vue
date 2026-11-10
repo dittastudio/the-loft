@@ -54,7 +54,7 @@ const onIntent = (item: PdfItem) => {
   <nav
     v-if="items?.length"
     aria-label="Main"
-    class="@container fixed inset-x-0 top-0 z-10 pointer-events-none"
+    class="site-navigation @container fixed inset-x-0 top-0 z-10 pointer-events-none"
   >
     <!-- Level with the top of the hero's box on desktop, when there is one (its 100cqw is the page's width). -->
     <div class="wrapper pt-(--app-gutter-outer) md:pt-[var(--hero-box-top,var(--app-gutter-outer))]">
@@ -117,3 +117,23 @@ const onIntent = (item: PdfItem) => {
     </div>
   </UiModal>
 </template>
+
+<style scoped>
+/* Fades in with the hero's logos during its intro, hidden until it starts and shown after 4s if JS never takes over. */
+@media (prefers-reduced-motion: no-preference) {
+  :root:has(.block-hero) .site-navigation {
+    transition: opacity var(--intro-length) var(--intro-ease);
+  }
+
+  :root:has(.block-hero[data-intro='waiting']) .site-navigation {
+    opacity: 0;
+    animation: site-navigation-reveal 0s 4s forwards;
+  }
+
+  @keyframes site-navigation-reveal {
+    to {
+      opacity: 1;
+    }
+  }
+}
+</style>

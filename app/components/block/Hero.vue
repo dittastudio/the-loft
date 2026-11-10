@@ -148,6 +148,10 @@ onMounted(async () => {
   /* Both outer rows share the taller one's height as a minimum, so the image stays centred at any viewport height. */
   --row-min: max(var(--the-loft-row-h), var(--ec1-row-h));
 
+  /* The intro's timing, the same as the idle spins, so the logos, scale and SiteNavigation move with the turn. */
+  --intro-length: 2040ms;
+  --intro-ease: cubic-bezier(0.45, 0, 0.15, 1);
+
   @variant md {
     --the-loft-w: calc(131.25 * var(--fluid-px));
     --ec1-offset: calc(80 * var(--fluid-px));
@@ -195,12 +199,6 @@ onMounted(async () => {
 
 /* The intro, which useBoxTurn's spinIn turns the box for. There's none to wait for when motion is reduced. */
 @media (prefers-reduced-motion: no-preference) {
-  .block-hero {
-    /* The same as the spins when idle, so the logos and the scale move as one with the turn. */
-    --intro-length: 2040ms;
-    --intro-ease: cubic-bezier(0.45, 0, 0.15, 1);
-  }
-
   .block-hero__cell {
     transition: opacity 0.4s --theme(--ease-outQuad);
   }
