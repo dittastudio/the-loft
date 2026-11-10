@@ -16,10 +16,10 @@
 
 @theme {
   --color-\*: initial;
-  --color-white: hsla(0, 0%, 100%, 1);
-  --color-black: hsla(0, 0%, 0%, 1);
+  --color-white: oklch(100% 0 0);
+  --color-black: oklch(0% 0 0);
   --color-brand: oklch(40.8% 0.131 266.5); /* #294390 */
-  --color-grey: oklch(75.8% 0.008 186.82); /* #abb2b1 */
+  --color-grey: oklch(84.7% 0.003 228.8); /* #CBCDCE */
   --color-grey-mid: oklch(67% 0.008 186.82); /* #909796, 3:1 on both white and brand */
 
   --breakpoint-\*: initial;
