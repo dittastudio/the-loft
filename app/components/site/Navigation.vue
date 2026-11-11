@@ -56,7 +56,7 @@ const onIntent = (item: PdfItem) => {
   <nav
     v-if="items?.length"
     aria-label="Main"
-    class="site-navigation fixed z-10 pointer-events-none"
+    class="site-navigation sticky md:fixed z-10 pointer-events-none"
   >
     <div class="site-navigation__inner">
       <ul class="flex flex-col items-end pointer-events-auto font-sans text-right text-20 leading-[1.1] lowercase">
@@ -121,8 +121,9 @@ const onIntent = (item: PdfItem) => {
 @reference "~/assets/css/app.css";
 
 /*
-  Lined up with the hero's box: its right edge below md, its top on desktop. Without anchor positioning that comes
-  from BlockHero's grid maths, which is in cqw, so the nav is a page-wide size container.
+  Lined up with the hero's box: its right edge below md, its top on desktop. Below md it is sticky, so it takes up
+  room above the hero, whose --nav-h must match its height. There, and on desktop without anchor positioning, the
+  alignment comes from BlockHero's grid maths, which is in cqw, so the nav is a page-wide size container.
 */
 .site-navigation {
   inset: 0 0 auto;
@@ -138,20 +139,20 @@ const onIntent = (item: PdfItem) => {
   }
 }
 
-/* Named rather than set as its position-anchor, so the nav stays fixed as the page scrolls. */
+/*
+  Named rather than set as its position-anchor, so the nav stays fixed as the page scrolls. Only from md, as a sticky
+  element can't be anchored.
+*/
 @supports (anchor-name: --hero-box) {
-  .site-navigation {
-    inset: anchor(--hero-box top, var(--app-gutter-outer)) var(--app-gutter-outer) auto auto;
-    container-type: normal; /* or it would be its own containing block */
-
-    @variant max-md {
-      top: min(var(--hero-box-right, var(--app-gutter-outer)), 80px);
-      right: anchor(--hero-box right, var(--app-gutter-outer));
+  @variant md {
+    .site-navigation {
+      inset: anchor(--hero-box top, var(--app-gutter-outer)) var(--app-gutter-outer) auto auto;
+      container-type: normal; /* or it would be its own containing block */
     }
-  }
 
-  .site-navigation__inner {
-    padding: 0;
+    .site-navigation__inner {
+      padding: 0;
+    }
   }
 }
 

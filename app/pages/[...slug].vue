@@ -28,7 +28,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <main class="w-full min-h-svh">
+  <main class="w-full">
     <TemplatePage
       v-if="isPage(story)"
       :story="story"
