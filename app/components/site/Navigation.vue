@@ -15,12 +15,14 @@ const pdf = ref<{ src: string; download: string; title: string } | null>(null)
 
 type PdfItem = Extract<Item, { component: 'element_link_pdf' }>
 
+// Padded out to the gutter at the sides, for a wider tap target.
 const linkClass =
-  'inline-block p-(--app-gutter-outer) -m-(--app-gutter-outer) md:py-0 md:-my-0 transition-opacity duration-300 ease-out hover:opacity-50'
+  'inline-block px-(--app-gutter-outer) -mx-(--app-gutter-outer) transition-opacity duration-300 ease-out hover:opacity-50'
 
+// The first and last links reach the gutter above and below too.
 const edgeClass = (index: number) => ({
-  'md:pt-(--app-gutter-outer) md:-mt-(--app-gutter-outer)': index === 0,
-  'md:pb-(--app-gutter-outer) md:-mb-(--app-gutter-outer)': index === (items?.length ?? 0) - 1,
+  'pt-(--app-gutter-outer) -mt-(--app-gutter-outer)': index === 0,
+  'pb-(--app-gutter-outer) -mb-(--app-gutter-outer)': index === (items?.length ?? 0) - 1,
 })
 
 const onClick = (event: MouseEvent, item: PdfItem) => {
@@ -56,11 +58,14 @@ const onIntent = (item: PdfItem) => {
     aria-label="Main"
     class="site-navigation @container fixed inset-x-0 top-0 z-10 pointer-events-none"
   >
-    <!-- Level with the top of the hero's box on desktop, when there is one (its 100cqw is the page's width). -->
-    <div class="wrapper pt-(--app-gutter-outer) md:pt-[var(--hero-box-top,var(--app-gutter-outer))]">
-      <ul
-        class="flex flex-row-reverse justify-between md:flex-col md:items-end pointer-events-auto font-sans text-right text-20 leading-[1.1] lowercase"
-      >
+    <!--
+      Lined up with the hero's box, when there is one (its 100cqw is the page's width):
+      with its right edge below md (and as far from the top as from the right, up to 80px), and level with its top on desktop.
+    -->
+    <div
+      class="wrapper pt-(--app-gutter-outer) max-md:pt-[min(var(--hero-box-right,var(--app-gutter-outer)),80px)] max-md:pr-[var(--hero-box-right,var(--app-gutter-outer))] md:pt-[var(--hero-box-top,var(--app-gutter-outer))]"
+    >
+      <ul class="flex flex-col items-end pointer-events-auto font-sans text-right text-20 leading-[1.1] lowercase">
         <li
           v-for="(item, index) in items"
           :key="item._uid"

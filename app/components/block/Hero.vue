@@ -119,28 +119,39 @@ onMounted(async () => {
 <style>
 @reference "~/assets/css/app.css";
 
-/* On the root while the hero is on the page, so SiteNavigation can line its links up with the top of the box. */
+/* On the root while the hero is on the page, so SiteNavigation can line its links up with the box. */
 :root:has(.block-hero) {
   /* One design pixel: a fixed 1px below xl, then scales with the viewport from 1440px. */
   --fluid-px: 1px;
 
   /* SVG viewBox measurements. */
   --the-loft-vb-w: 420;
-  --the-loft-vb-h: 506;
-  --the-loft-vb-l-top: 283.63; /* top of the "l" in "loft" */
+  --the-loft-vb-h: 507;
+  --the-loft-vb-l-top: 283.62; /* top of the "l" in "loft" */
   --ec1-vb-w: 258;
   --ec1-vb-h: 223;
 
   /* ec1 derives from the-loft so the logo pair stays proportional. */
-  --the-loft-w: calc(115.87 * var(--fluid-px));
+  --the-loft-w: calc(132.09 * var(--fluid-px)); /* 14% up on the design's 115.87 below md */
   --ec1-w: calc(var(--the-loft-w) * var(--ec1-vb-w) / var(--the-loft-vb-w));
   /* Negative margin that drops the-loft so the top of the "l" meets the top of the image. */
   --the-loft-l-offset: calc(
     var(--the-loft-w) * (var(--the-loft-vb-l-top) - var(--the-loft-vb-h)) / var(--the-loft-vb-w)
   );
-  --ec1-offset: calc(40 * var(--fluid-px));
-  /* Fills its two-column grid area, up to 130px. */
-  --image-w: min(100%, 130px);
+  --ec1-offset: calc(12 * var(--fluid-px));
+  /* Fills its two-column grid area (columns 6-7 of 8), up to 130px. */
+  --image-max-w: 130px;
+  --image-w: min(100%, var(--image-max-w));
+
+  /*
+    The box's distance from the right of the page below md, for an element as wide as the page that is a size
+    container: the gutter and the empty last column, plus half of what's left of its area once it stops growing.
+  */
+  --hero-col-w: calc((100cqw - 2 * var(--app-gutter-outer) - 7 * var(--app-gutter-inner)) / 8);
+  --hero-box-right: calc(
+    var(--app-gutter-outer) + var(--hero-col-w) + var(--app-gutter-inner) +
+      max(0px, (2 * var(--hero-col-w) + var(--app-gutter-inner) - var(--image-max-w)) / 2)
+  );
 
   /* Heights the logos take up in the rows above and below the image. */
   --the-loft-row-h: calc(var(--the-loft-w) * var(--the-loft-vb-h) / var(--the-loft-vb-w));
