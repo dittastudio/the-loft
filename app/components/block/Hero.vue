@@ -73,7 +73,7 @@ onMounted(async () => {
     ref="container"
     v-editable="block"
     :data-intro="introPhase"
-    class="block-hero relative grid min-h-svh motion-safe:touch-pan-y motion-safe:touch-pinch-zoom py-[min(var(--hero-box-right),80px)] md:py-(--app-gutter-outer) overflow-hidden"
+    class="block-hero relative grid min-h-[calc(100svh-var(--nav-h))] md:min-h-svh motion-safe:touch-pan-y motion-safe:touch-pinch-zoom pb-[calc(var(--app-gutter-outer)*2)] overflow-hidden"
   >
     <div
       class="wrapper grid md:max-w-(--max-w) md:mx-auto grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] content-center md:grid-rows-[minmax(var(--row-min),1fr)_auto_minmax(var(--row-min),1fr)] gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0"
@@ -207,6 +207,12 @@ onMounted(async () => {
 @reference "~/assets/css/app.css";
 
 .block-hero {
+  /*
+    SiteNavigation's height below md, where it is sticky and so sits in the flow above the hero: its top padding plus
+    its links, each one line of text-20 at a line-height of 1.1. The hero fills the rest of the screen beneath it.
+  */
+  --nav-h: calc(min(var(--hero-box-right), 80px) + var(--site-nav-items, 0) * var(--text-20) * 1.1);
+
   @variant md {
     --app-columns: var(--hero-columns);
   }

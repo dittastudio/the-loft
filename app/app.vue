@@ -24,7 +24,8 @@ useSeoMeta({
 </script>
 
 <template>
-  <div>
+  <!-- The link count lets BlockHero work out the navigation's height in CSS, with no measuring after load. -->
+  <div :style="{ '--site-nav-items': story.content.navigation?.length ?? 0 }">
     <SiteNavigation :items="story.content.navigation" />
 
     <LazySiteCollaboration
