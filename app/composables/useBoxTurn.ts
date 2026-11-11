@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import type { Mat3, Point, Vec3 } from '~/utils/boxTurn/geometry'
 import {
   angleBetween,
-  blend,
+  blender,
   cubicBezier,
   fitBox,
   fromAxisAngle,
@@ -128,13 +128,15 @@ export default function useBoxTurn(
     }
   }
 
+  const blendShape = blender(shape)
+
   // Blending is the costly part, so it only runs while easing between the two.
   const blendClip = (box: () => Point[], w: number) => {
     if (w <= 0) {
       return restClip
     }
 
-    return toClipPath(w >= 1 ? box() : blend(shape, box(), w))
+    return toClipPath(w >= 1 ? box() : blendShape(box(), w))
   }
 
   const reducedMotion = usePreferredReducedMotion()

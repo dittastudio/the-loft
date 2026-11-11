@@ -53,7 +53,7 @@ export default defineNuxtConfig({
     families: [
       // Served from public/fonts, so @nuxt/fonts writes the @font-face, a metric-matched fallback and the preload.
       { name: 'UniversPro57Condensed', provider: 'local', weights: [400], styles: ['normal'] },
-      { name: 'EB Garamond', provider: 'google', weights: [400], styles: ['italic'] },
+      { name: 'EB Garamond', provider: 'google', weights: [400], styles: ['italic'], subsets: ['latin'] },
     ],
   },
   ssr: !isSpa,
@@ -128,7 +128,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-02-10',
   vite: {
     optimizeDeps: {
-      include: ['@storyblok/vue', '@tiptap/core', 'pdfjs-dist/legacy/build/pdf.mjs', 'tailwind-merge'],
+      include: ['@storyblok/vue', '@tiptap/core', 'pdfjs-dist/legacy/build/pdf.mjs'],
     },
     plugins: [
       tailwindcss(),

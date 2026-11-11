@@ -20,7 +20,6 @@ const { isModalOpen } = useTopLayer()
 const imageEl = computed<HTMLElement | null>(() => image.value?.$el ?? null)
 
 // The intro's look is all in the CSS, which this moves between waiting for the image and spinning in, then ends.
-const INTRO_DELAY = 300 // ms before it starts
 const INTRO_WAIT = 1000 // ms to wait for the image to decode before giving up and showing it at rest
 
 const route = useRoute()
@@ -47,7 +46,7 @@ const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, 
 const isImageReady = (el: unknown) =>
   Promise.race([
     el instanceof HTMLImageElement
-      ? Promise.all([el.decode(), wait(INTRO_DELAY)]).then(
+      ? el.decode().then(
           () => true,
           () => false,
         )
@@ -88,24 +87,28 @@ onMounted(async () => {
 
       <div
         v-if="block.image?.filename"
-        ref="cell"
-        class="block-hero__cell relative row-start-2 col-start-6 col-end-8 md:col-start-5 md:col-end-6 lg:col-start-4 lg:col-end-5 justify-self-center w-(--image-w) aspect-square select-none motion-safe:touch-pan-y motion-safe:touch-pinch-zoom motion-safe:pointer-fine:cursor-grab"
-        :style="{ '--image-scale': imageScale, '--image-drift': imageDrift, clipPath: imageClip }"
-        @animationend="introPhase = introPhase === 'spinning' ? undefined : introPhase"
+        class="block-hero__box row-start-2 col-start-6 col-end-8 md:col-start-5 md:col-end-6 lg:col-start-4 lg:col-end-5 justify-self-center w-(--image-w)"
       >
-        <NuxtImg
-          ref="image"
-          provider="storyblok"
-          :src="block.image.filename"
-          :alt="block.image.alt ?? ''"
-          :width="688"
-          :height="688"
-          format="avif"
-          sizes="sm:43vw md:27vw lg:20vw"
-          fetchpriority="high"
-          draggable="false"
-          class="absolute top-1/2 left-1/2 -translate-1/2 size-[calc((var(--image-scale)+2*var(--image-drift))*100%)] max-w-none object-cover will-change-transform pointer-events-none"
-        />
+        <div
+          ref="cell"
+          class="block-hero__cell relative w-full aspect-square select-none motion-safe:touch-pan-y motion-safe:touch-pinch-zoom motion-safe:pointer-fine:cursor-grab"
+          :style="{ '--image-scale': imageScale, '--image-drift': imageDrift, clipPath: imageClip }"
+          @animationend="introPhase = introPhase === 'spinning' ? undefined : introPhase"
+        >
+          <NuxtImg
+            ref="image"
+            provider="storyblok"
+            :src="block.image.filename"
+            :alt="block.image.alt ?? ''"
+            :width="688"
+            :height="688"
+            format="avif"
+            sizes="sm:43vw md:27vw lg:20vw"
+            fetchpriority="high"
+            draggable="false"
+            class="absolute top-1/2 left-1/2 -translate-1/2 size-[calc((var(--image-scale)+2*var(--image-drift))*100%)] max-w-none object-cover will-change-transform pointer-events-none"
+          />
+        </div>
       </div>
 
       <Ec1Svg
@@ -119,28 +122,36 @@ onMounted(async () => {
 <style>
 @reference "~/assets/css/app.css";
 
-/* On the root while the hero is on the page, so SiteNavigation can line its links up with the top of the box. */
+/* On the root while the hero is on the page, so SiteNavigation can line its links up with the box. */
 :root:has(.block-hero) {
   /* One design pixel: a fixed 1px below xl, then scales with the viewport from 1440px. */
   --fluid-px: 1px;
 
   /* SVG viewBox measurements. */
   --the-loft-vb-w: 420;
-  --the-loft-vb-h: 506;
-  --the-loft-vb-l-top: 283.63; /* top of the "l" in "loft" */
+  --the-loft-vb-h: 507;
+  --the-loft-vb-l-top: 283.62; /* top of the "l" in "loft" */
   --ec1-vb-w: 258;
   --ec1-vb-h: 223;
 
   /* ec1 derives from the-loft so the logo pair stays proportional. */
-  --the-loft-w: calc(115.87 * var(--fluid-px));
+  --the-loft-w: calc(132.09 * var(--fluid-px));
   --ec1-w: calc(var(--the-loft-w) * var(--ec1-vb-w) / var(--the-loft-vb-w));
   /* Negative margin that drops the-loft so the top of the "l" meets the top of the image. */
   --the-loft-l-offset: calc(
     var(--the-loft-w) * (var(--the-loft-vb-l-top) - var(--the-loft-vb-h)) / var(--the-loft-vb-w)
   );
-  --ec1-offset: calc(40 * var(--fluid-px));
-  /* Fills its two-column grid area, up to 130px. */
-  --image-w: min(100%, 130px);
+  --ec1-offset: calc(12 * var(--fluid-px));
+  /* Fills its two-column grid area (columns 6-7 of 8), up to 130px. */
+  --image-max-w: 130px;
+  --image-w: min(100%, var(--image-max-w));
+
+  /* The box's distance from the right of the page below md, for a page-wide size container. */
+  --hero-col-w: calc((100cqw - 2 * var(--app-gutter-outer) - 7 * var(--app-gutter-inner)) / 8);
+  --hero-box-right: calc(
+    var(--app-gutter-outer) + var(--hero-col-w) + var(--app-gutter-inner) +
+      max(0px, (2 * var(--hero-col-w) + var(--app-gutter-inner) - var(--image-max-w)) / 2)
+  );
 
   /* Heights the logos take up in the rows above and below the image. */
   --the-loft-row-h: calc(var(--the-loft-w) * var(--the-loft-vb-h) / var(--the-loft-vb-w));
@@ -197,6 +208,11 @@ onMounted(async () => {
   }
 }
 
+/* SiteNavigation's anchor. Not the cell, whose scale would move it. */
+.block-hero__box {
+  anchor-name: --hero-box;
+}
+
 /* The intro, which useBoxTurn's spinIn turns the box for. There's none to wait for when motion is reduced. */
 @media (prefers-reduced-motion: no-preference) {
   .block-hero__cell {
@@ -216,13 +232,13 @@ onMounted(async () => {
   /* Hidden from first paint, so the prerendered resting shape never flashes, until JS moves on or never does. */
   .block-hero[data-intro='waiting'] .block-hero__cell {
     opacity: 0;
-    animation: block-hero-reveal 0s 4s forwards;
+    animation: block-hero-reveal 0s 2.5s forwards;
   }
 
   .block-hero[data-intro='waiting'] .block-hero__logo {
     opacity: 0;
     filter: blur(12px);
-    animation: block-hero-reveal 0s 4s forwards;
+    animation: block-hero-reveal 0s 2.5s forwards;
   }
 
   .block-hero[data-intro='spinning'] .block-hero__cell {

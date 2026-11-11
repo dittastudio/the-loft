@@ -1,30 +1,10 @@
 import type { Block } from '#storyblok-schema'
 import type { ImageModifiers } from '@nuxt/image'
-import type { AssetFieldValue, RichTextFieldValue } from '@storyblok/schema'
+import type { AssetFieldValue } from '@storyblok/schema'
 import type { ISbStoryData } from '@storyblok/js'
 import type { LocationQuery } from 'vue-router'
 
 const isVisualEditor = (search: LocationQuery) => '_storyblok' in search
-
-const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'avif']
-
-const videoExtensions = ['mp4', 'webm', 'ogg']
-
-const storyblokAssetType = (filename: string): 'image' | 'video' | 'other' => {
-  if (typeof filename !== 'string' || !filename?.trim().length) {
-    return 'other'
-  }
-
-  const ext = filename.split('.').pop() || ''
-
-  if (imageExtensions.includes(ext)) {
-    return 'image'
-  } else if (videoExtensions.includes(ext)) {
-    return 'video'
-  }
-
-  return 'other'
-}
 
 const storyblokPdf = (asset: AssetFieldValue | null | undefined): string | null => {
   const url = asset?.filename
@@ -34,13 +14,6 @@ const storyblokPdf = (asset: AssetFieldValue | null | undefined): string | null 
 
 // a.storyblok.com sends no CORS headers, a2.storyblok.com does. Needed for fetching assets from JS (e.g. pdf.js).
 const storyblokCorsUrl = (url: string): string => url.replace('//a.storyblok.com/', '//a2.storyblok.com/')
-
-const storyblokRichTextContent = (richtext: RichTextFieldValue | undefined): boolean => {
-  const first = richtext?.content?.[0]
-
-  // Text nodes have no `content`, so narrow before reading it.
-  return Boolean(first && 'content' in first && first.content?.length)
-}
 
 const storyblokSlug = (path: string): string => (['', '/'].includes(path) ? '/home' : path.replace(/\/+$/, ''))
 
@@ -67,36 +40,4 @@ const storyblokImage = (filename: string | null | undefined, modifiers?: Partial
   return path
 }
 
-const storyblokImageDimensions = (filename: string | null | undefined): { width: number; height: number } => {
-  if (!filename?.length) {
-    return {
-      width: 0,
-      height: 0,
-    }
-  }
-
-  const parts = filename.split('/')
-
-  if (!parts[5]?.includes('x')) {
-    return {
-      width: 0,
-      height: 0,
-    }
-  }
-
-  const [width, height] = parts[5].split('x')
-
-  return { width: Number(width), height: Number(height) }
-}
-
-export {
-  isPage,
-  storyblokAssetType,
-  storyblokCorsUrl,
-  isVisualEditor,
-  storyblokImage,
-  storyblokImageDimensions,
-  storyblokPdf,
-  storyblokRichTextContent,
-  storyblokSlug,
-}
+export { isPage, storyblokCorsUrl, isVisualEditor, storyblokImage, storyblokPdf, storyblokSlug }

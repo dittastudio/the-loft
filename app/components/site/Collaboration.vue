@@ -6,7 +6,7 @@ interface Props {
 const { text } = defineProps<Props>()
 
 const target = useTemplateRef('target')
-const { opened } = useTopLayer()
+const { opened, isModalOpen } = useTopLayer()
 
 // Re-adding moves it to the top of the top layer, above any modal opened since.
 const raise = () => {
@@ -26,7 +26,7 @@ const isBouncing = useBounce(target, { speed: 100 })
 
 /*
   Hushed while the reader is touching, scrolling or zoomed in, so it doesn't drift over the pages being read.
-  This is tracked everywhere; the CSS only applies it while a modal is open.
+  Only tracked while a modal is open, which is the only time the CSS applies it.
 */
 const isHushed = shallowRef<boolean>(false)
 
@@ -56,20 +56,24 @@ const onTouch = (event: TouchEvent) => {
   hush()
 }
 
-// The tap that opened the modal would otherwise carry its hush in, fading out and back as the modal appears.
-watch(opened, () => {
+// Reset as a modal opens or closes.
+watch(isModalOpen, () => {
   cancelSettle()
+  touches = 0
   isHushed.value = false
 })
 
-onMounted(() => {
-  viewport.value = window.visualViewport
+// Only listened to while a modal is open.
+const page = computed(() => (isModalOpen.value ? document : null))
+
+watch(isModalOpen, (isOpen) => {
+  viewport.value = isOpen ? window.visualViewport : null
 })
 
 // Scroll doesn't bubble, so it's caught on the way down to reach the modal's scroller.
-useEventListener(document, 'scroll', hush, { capture: true, passive: true })
-useEventListener('wheel', hush, { passive: true })
-useEventListener(['touchstart', 'touchend', 'touchcancel'], onTouch, { passive: true })
+useEventListener(page, 'scroll', hush, { capture: true, passive: true })
+useEventListener(page, 'wheel', hush, { passive: true })
+useEventListener(page, ['touchstart', 'touchend', 'touchcancel'], onTouch, { passive: true })
 // Pinching and panning while zoomed.
 useEventListener(viewport, ['resize', 'scroll'], hush, { passive: true })
 </script>

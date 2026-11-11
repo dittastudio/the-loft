@@ -186,19 +186,23 @@ const radius = (polygon: Point[], angle: number) => {
 
 const angleOf = (p: Point) => Math.atan2(p[1] - CENTRE[1], p[0] - CENTRE[0])
 
-// Blends two convex shapes by their distance from the centre, so they don't need matching vertices.
-export const blend = (from: Point[], to: Point[], w: number): Point[] => {
-  const angles = [
+// Blends `from` into other convex shapes by their distance from the centre, so they don't need matching vertices.
+// What only depends on `from` is worked out once, as this runs every frame.
+export const blender = (from: Point[]) => {
+  const ray = (angle: number) => ({ angle, cos: Math.cos(angle), sin: Math.sin(angle), reach: radius(from, angle) })
+  const fixed = [
     ...Array.from({ length: SAMPLES }, (_, i) => (i / SAMPLES) * Math.PI * 2 - Math.PI),
     ...from.map(angleOf),
-    ...to.map(angleOf),
-  ].sort((a, b) => a - b)
+  ].map(ray)
 
-  return angles.map((angle) => {
-    const r = radius(from, angle) * (1 - w) + radius(to, angle) * w
+  return (to: Point[], w: number): Point[] =>
+    [...fixed, ...to.map((p) => ray(angleOf(p)))]
+      .sort((a, b) => a.angle - b.angle)
+      .map(({ angle, cos, sin, reach }) => {
+        const r = reach * (1 - w) + radius(to, angle) * w
 
-    return [CENTRE[0] + Math.cos(angle) * r, CENTRE[1] + Math.sin(angle) * r]
-  })
+        return [CENTRE[0] + cos * r, CENTRE[1] + sin * r]
+      })
 }
 
 // Outline of the box turned by `rotation`, centred on the origin.

@@ -39,23 +39,21 @@ Storyblok components are defined in TypeScript in `.storyblok/schema/`, not in t
 - `useStory` (`app/composables/useStory.ts`) wraps `useAsyncStoryblok`. It picks draft or published content from `NUXT_STORYBLOK_VERSION`, supports `?_storyblok_release`, and throws a 404 when it fails. `storyblokSlug` maps `/` to the `home` story.
 - `TemplatePage` dispatches each `story.content.blocks` item to its `Block*` component with an explicit `v-if` on `block.component`. Storyblok's dynamic component resolution is not used. A new block needs a schema file, a component in `app/components/block/`, and a branch in `app/components/template/Page.vue`.
 - Block components take a single `block` prop and put `v-editable="block"` on their root element.
-- `app/utils/storyblok.ts` holds the Storyblok helpers: image URLs and dimensions, asset type detection, PDF links, and checks for empty rich text. Storyblok assets that are fetched from JS (pdf.js, for example) must go through `storyblokCorsUrl`, because only `a2.storyblok.com` sends CORS headers.
+- `app/utils/storyblok.ts` holds the Storyblok helpers: image URLs, PDF links, slugs and the visual editor check. Storyblok assets that are fetched from JS (pdf.js, for example) must go through `storyblokCorsUrl`, because only `a2.storyblok.com` sends CORS headers.
 - `server/api/sitemap.get.ts` builds the sitemap from the published stories.
 
 ## Styling
 
 - The project uses Tailwind v4, configured in CSS in `app/assets/css/app.css`. The theme resets colours, spacing (`4px` units), font sizes (`text-16`, `text-20`, `text-24`) and breakpoints. Use only the tokens defined there.
-- Breakpoints are defined twice in `app.css`: as `--breakpoint-*` for Tailwind and as `--bp-*`, which `app/utils/screens.ts` reads from JS. Keep the two in sync.
 - The layout grid uses the CSS variables `--app-columns`, `--app-gutter-outer` and `--app-gutter-inner`. `DevGuide` (dev only) overlays the grid.
 - PostCSS runs `postcss-nested` and `postcss-utopia`, which provides fluid `utopia.clamp(min, max)` sizing between widths of 375px and 1800px.
-- If you add custom font-size or text-colour utilities, extend `app/utils/twMerge.ts` so class merging resolves them. `useMergedAttrs` merges a component's own classes with the classes passed in by its parent.
 - SVGs import as components with `?component` (vite-svg-loader, with SVGO turned off).
 
 ## Hero box-turn animation
 
 `useBoxTurn` (`app/composables/useBoxTurn.ts`) drives the hero image. It computes a `clip-path` that draws a rotating 3D cube outline. The cube follows the cursor, spins on its own when idle, tumbles when the page scrolls or is swiped, and can be dragged or poked. The pure geometry it relies on (matrices, perspective projection, blending of convex shapes) lives in `app/utils/boxTurn/geometry.ts`, which has no Vue dependencies. Every option and constant has an inline comment describing its units and meaning; keep that style when you change them.
 
-On each full page load `app/components/block/Hero.vue` plays `spinIn()`, a spin like the idle ones that ignores input, while its CSS scales and fades in the cell and brings the two logos into focus. `data-intro` on the hero holds the phase, which `SiteCollaboration` also waits on through `:has()`. CSS hides the cell and logos from first paint and reveals them after 4s if JS never takes over. The intro is skipped under reduced motion and in the visual editor, and the image appears at rest if it takes over a second to decode.
+On each full page load `app/components/block/Hero.vue` plays `spinIn()`, a spin like the idle ones that ignores input, while its CSS scales and fades in the cell and brings the two logos into focus. `data-intro` on the hero holds the phase, which `SiteCollaboration` also waits on through `:has()`. CSS hides the cell and logos from first paint and reveals them after 2.5s if JS never takes over. The intro is skipped under reduced motion and in the visual editor, and the image appears at rest if it takes over a second to decode.
 
 ## Formatting
 

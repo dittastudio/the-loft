@@ -15,12 +15,14 @@ const pdf = ref<{ src: string; download: string; title: string } | null>(null)
 
 type PdfItem = Extract<Item, { component: 'element_link_pdf' }>
 
+// Padded out to the gutter at the sides, for a wider tap target.
 const linkClass =
-  'inline-block p-(--app-gutter-outer) -m-(--app-gutter-outer) md:py-0 md:-my-0 transition-opacity duration-300 ease-out hover:opacity-50'
+  'inline-block px-(--app-gutter-outer) -mx-(--app-gutter-outer) transition-opacity duration-300 ease-out hover:opacity-50'
 
+// The first and last links reach the gutter above and below too.
 const edgeClass = (index: number) => ({
-  'md:pt-(--app-gutter-outer) md:-mt-(--app-gutter-outer)': index === 0,
-  'md:pb-(--app-gutter-outer) md:-mb-(--app-gutter-outer)': index === (items?.length ?? 0) - 1,
+  'pt-(--app-gutter-outer) -mt-(--app-gutter-outer)': index === 0,
+  'pb-(--app-gutter-outer) -mb-(--app-gutter-outer)': index === (items?.length ?? 0) - 1,
 })
 
 const onClick = (event: MouseEvent, item: PdfItem) => {
@@ -54,13 +56,10 @@ const onIntent = (item: PdfItem) => {
   <nav
     v-if="items?.length"
     aria-label="Main"
-    class="site-navigation @container fixed inset-x-0 top-0 z-10 pointer-events-none"
+    class="site-navigation fixed z-10 pointer-events-none"
   >
-    <!-- Level with the top of the hero's box on desktop, when there is one (its 100cqw is the page's width). -->
-    <div class="wrapper pt-(--app-gutter-outer) md:pt-[var(--hero-box-top,var(--app-gutter-outer))]">
-      <ul
-        class="flex flex-row-reverse justify-between md:flex-col md:items-end pointer-events-auto font-sans text-right text-20 leading-[1.1] lowercase"
-      >
+    <div class="site-navigation__inner">
+      <ul class="flex flex-col items-end pointer-events-auto font-sans text-right text-20 leading-[1.1] lowercase">
         <li
           v-for="(item, index) in items"
           :key="item._uid"
@@ -119,7 +118,44 @@ const onIntent = (item: PdfItem) => {
 </template>
 
 <style scoped>
-/* Fades in with the hero's logos during its intro, hidden until it starts and shown after 4s if JS never takes over. */
+@reference "~/assets/css/app.css";
+
+/*
+  Lined up with the hero's box: its right edge below md, its top on desktop. Without anchor positioning that comes
+  from BlockHero's grid maths, which is in cqw, so the nav is a page-wide size container.
+*/
+.site-navigation {
+  inset: 0 0 auto;
+  container-type: inline-size;
+}
+
+.site-navigation__inner {
+  padding: var(--hero-box-top, var(--app-gutter-outer)) var(--app-gutter-outer) 0;
+
+  @variant max-md {
+    padding-top: min(var(--hero-box-right, var(--app-gutter-outer)), 80px);
+    padding-right: var(--hero-box-right, var(--app-gutter-outer));
+  }
+}
+
+/* Named rather than set as its position-anchor, so the nav stays fixed as the page scrolls. */
+@supports (anchor-name: --hero-box) {
+  .site-navigation {
+    inset: anchor(--hero-box top, var(--app-gutter-outer)) var(--app-gutter-outer) auto auto;
+    container-type: normal; /* or it would be its own containing block */
+
+    @variant max-md {
+      top: min(var(--hero-box-right, var(--app-gutter-outer)), 80px);
+      right: anchor(--hero-box right, var(--app-gutter-outer));
+    }
+  }
+
+  .site-navigation__inner {
+    padding: 0;
+  }
+}
+
+/* Fades in with the hero's intro, or after 2.5s if JS never takes over. */
 @media (prefers-reduced-motion: no-preference) {
   :root:has(.block-hero) .site-navigation {
     transition: opacity var(--intro-length) var(--intro-ease);
@@ -127,7 +163,7 @@ const onIntent = (item: PdfItem) => {
 
   :root:has(.block-hero[data-intro='waiting']) .site-navigation {
     opacity: 0;
-    animation: site-navigation-reveal 0s 4s forwards;
+    animation: site-navigation-reveal 0s 2.5s forwards;
   }
 
   @keyframes site-navigation-reveal {
