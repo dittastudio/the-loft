@@ -73,7 +73,7 @@ onMounted(async () => {
     ref="container"
     v-editable="block"
     :data-intro="introPhase"
-    class="block-hero relative grid min-h-[calc(100svh-var(--nav-h))] md:min-h-svh motion-safe:touch-pan-y motion-safe:touch-pinch-zoom pb-[calc(var(--app-gutter-outer)*2)] overflow-hidden"
+    class="block-hero relative grid min-h-[calc(100svh-var(--nav-h))] md:min-h-svh motion-safe:touch-pan-y motion-safe:touch-pinch-zoom pb-(--app-gutter-outer) overflow-hidden"
   >
     <div
       class="wrapper grid md:max-w-(--max-w) md:mx-auto grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] content-center md:grid-rows-[minmax(var(--row-min),1fr)_auto_minmax(var(--row-min),1fr)] gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0"
