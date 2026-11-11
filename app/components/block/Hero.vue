@@ -76,7 +76,7 @@ onMounted(async () => {
     class="block-hero relative grid min-h-svh motion-safe:touch-pan-y motion-safe:touch-pinch-zoom py-[min(var(--hero-box-right),80px)] md:py-(--app-gutter-outer) overflow-hidden"
   >
     <div
-      class="wrapper grid md:max-w-(--max-w) md:mx-auto grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] grid-rows-[minmax(var(--row-min),1fr)_auto_minmax(var(--row-min),1fr)] gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0"
+      class="wrapper grid md:max-w-(--max-w) md:mx-auto grid-cols-[repeat(var(--app-columns),minmax(0,1fr))] content-center md:grid-rows-[minmax(var(--row-min),1fr)_auto_minmax(var(--row-min),1fr)] gap-x-(--app-gutter-inner) gap-y-10 md:gap-y-0"
     >
       <h1 class="sr-only">The Loft EC1</h1>
 
@@ -85,11 +85,12 @@ onMounted(async () => {
         class="block-hero__logo row-start-1 col-start-2 lg:col-start-1 col-end-[-1] self-end justify-self-start w-(--the-loft-w) h-auto fill-current md:mb-(--the-loft-l-offset)"
       />
 
+      <!-- Kept without an image, so the logos and SiteNavigation sit as if the cube were there but invisible. -->
       <div
-        v-if="block.image?.filename"
-        class="block-hero__box row-start-2 col-start-6 col-end-8 md:col-start-5 md:col-end-6 lg:col-start-4 lg:col-end-5 justify-self-center w-(--image-w)"
+        class="block-hero__box row-start-2 col-start-6 col-end-8 md:col-start-5 md:col-end-6 lg:col-start-4 lg:col-end-5 justify-self-center w-(--image-w) aspect-square"
       >
         <div
+          v-if="block.image?.filename"
           ref="cell"
           class="block-hero__cell relative w-full aspect-square select-none motion-safe:touch-pan-y motion-safe:touch-pinch-zoom motion-safe:pointer-fine:cursor-grab"
           :style="{ '--image-scale': imageScale, '--image-drift': imageDrift, clipPath: imageClip }"
@@ -153,12 +154,6 @@ onMounted(async () => {
       max(0px, (2 * var(--hero-col-w) + var(--app-gutter-inner) - var(--image-max-w)) / 2)
   );
 
-  /* Heights the logos take up in the rows above and below the image. */
-  --the-loft-row-h: calc(var(--the-loft-w) * var(--the-loft-vb-h) / var(--the-loft-vb-w));
-  --ec1-row-h: calc(var(--the-loft-w) * var(--ec1-vb-h) / var(--the-loft-vb-w) + var(--ec1-offset));
-  /* Both outer rows share the taller one's height as a minimum, so the image stays centred at any viewport height. */
-  --row-min: max(var(--the-loft-row-h), var(--ec1-row-h));
-
   /* The intro's timing, the same as the idle spins, so the logos, scale and SiteNavigation move with the turn. */
   --intro-length: 2040ms;
   --intro-ease: cubic-bezier(0.45, 0, 0.15, 1);
@@ -166,8 +161,17 @@ onMounted(async () => {
   @variant md {
     --the-loft-w: calc(131.25 * var(--fluid-px));
     --ec1-offset: calc(80 * var(--fluid-px));
-    /* Only the part of the-loft above the top of the "l" sits in its row; the rest hangs beside the image. */
+    /*
+      Heights the logos take up in the rows above and below the image. Only the part of the-loft above the top of
+      the "l" sits in its row; the rest hangs beside the image.
+    */
     --the-loft-row-h: calc(var(--the-loft-w) * var(--the-loft-vb-l-top) / var(--the-loft-vb-w));
+    --ec1-row-h: calc(var(--the-loft-w) * var(--ec1-vb-h) / var(--the-loft-vb-w) + var(--ec1-offset));
+    /*
+      Both outer rows share the taller one's height as a minimum, so the image stays centred at any viewport height.
+      Below md the rows are sized to their content instead, and the two logos and the image are centred as one group.
+    */
+    --row-min: max(var(--the-loft-row-h), var(--ec1-row-h));
     /* The image sits in the single middle column of the 7-column grid. */
     --image-w: calc((100% + 2 * var(--app-gutter-inner)) * 1.25);
     /* The composition is capped to a centred box spanning site columns 3-9 at 1440 (874px of content), re-gridded into 7 columns. */
