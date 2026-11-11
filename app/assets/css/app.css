@@ -3,17 +3,6 @@
 @import './transitions.css';
 @import './utils.css';
 
-/* `static` so these are always emitted: they're only read from JS (utils/screens.ts), which Tailwind can't see. */
-@theme static {
-  --bp-2xs: 375px;
-  --bp-xs: 480px;
-  --bp-sm: 600px;
-  --bp-md: 800px;
-  --bp-lg: 1200px;
-  --bp-xl: 1440px;
-  --bp-2xl: 1800px;
-}
-
 @theme {
   --color-\*: initial;
   --color-white: oklch(100% 0 0);
@@ -23,7 +12,6 @@
   --color-grey-mid: oklch(67% 0.008 186.82); /* #909796, 3:1 on both white and brand */
 
   --breakpoint-\*: initial;
-  /* Literal values, as var() is not valid inside @media queries. Keep in sync with --bp-*. */
   --breakpoint-2xs: 375px;
   --breakpoint-xs: 480px;
   --breakpoint-sm: 600px;

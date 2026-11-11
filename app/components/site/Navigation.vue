@@ -56,15 +56,9 @@ const onIntent = (item: PdfItem) => {
   <nav
     v-if="items?.length"
     aria-label="Main"
-    class="site-navigation @container fixed inset-x-0 top-0 z-10 pointer-events-none"
+    class="site-navigation fixed z-10 pointer-events-none"
   >
-    <!--
-      Lined up with the hero's box, when there is one (its 100cqw is the page's width):
-      with its right edge below md (and as far from the top as from the right, up to 80px), and level with its top on desktop.
-    -->
-    <div
-      class="wrapper pt-(--app-gutter-outer) max-md:pt-[min(var(--hero-box-right,var(--app-gutter-outer)),80px)] max-md:pr-[var(--hero-box-right,var(--app-gutter-outer))] md:pt-[var(--hero-box-top,var(--app-gutter-outer))]"
-    >
+    <div class="site-navigation__inner">
       <ul class="flex flex-col items-end pointer-events-auto font-sans text-right text-20 leading-[1.1] lowercase">
         <li
           v-for="(item, index) in items"
@@ -124,7 +118,44 @@ const onIntent = (item: PdfItem) => {
 </template>
 
 <style scoped>
-/* Fades in with the hero's logos during its intro, hidden until it starts and shown after 4s if JS never takes over. */
+@reference "~/assets/css/app.css";
+
+/*
+  Lined up with the hero's box: its right edge below md, its top on desktop. Without anchor positioning that comes
+  from BlockHero's grid maths, which is in cqw, so the nav is a page-wide size container.
+*/
+.site-navigation {
+  inset: 0 0 auto;
+  container-type: inline-size;
+}
+
+.site-navigation__inner {
+  padding: var(--hero-box-top, var(--app-gutter-outer)) var(--app-gutter-outer) 0;
+
+  @variant max-md {
+    padding-top: min(var(--hero-box-right, var(--app-gutter-outer)), 80px);
+    padding-right: var(--hero-box-right, var(--app-gutter-outer));
+  }
+}
+
+/* Named rather than set as its position-anchor, so the nav stays fixed as the page scrolls. */
+@supports (anchor-name: --hero-box) {
+  .site-navigation {
+    inset: anchor(--hero-box top, var(--app-gutter-outer)) var(--app-gutter-outer) auto auto;
+    container-type: normal; /* or it would be its own containing block */
+
+    @variant max-md {
+      top: min(var(--hero-box-right, var(--app-gutter-outer)), 80px);
+      right: anchor(--hero-box right, var(--app-gutter-outer));
+    }
+  }
+
+  .site-navigation__inner {
+    padding: 0;
+  }
+}
+
+/* Fades in with the hero's intro, or after 2.5s if JS never takes over. */
 @media (prefers-reduced-motion: no-preference) {
   :root:has(.block-hero) .site-navigation {
     transition: opacity var(--intro-length) var(--intro-ease);
@@ -132,7 +163,7 @@ const onIntent = (item: PdfItem) => {
 
   :root:has(.block-hero[data-intro='waiting']) .site-navigation {
     opacity: 0;
-    animation: site-navigation-reveal 0s 4s forwards;
+    animation: site-navigation-reveal 0s 2.5s forwards;
   }
 
   @keyframes site-navigation-reveal {

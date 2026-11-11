@@ -115,7 +115,7 @@ const onClick = (event: MouseEvent) => {
 @reference "~/assets/css/app.css";
 
 /*
-  Enter: the frost settles first, then the header and pages come into focus (blur → sharp) a beat later.
+  Enter: the frost settles first, then the header comes into focus and the pages fade in a beat later (too tall to blur).
   Exit: reversed and quicker, the content dissolves first and the frost lifts after it.
   Transitions are taken from the state being entered, so delays live on the open state for enter and on the base rule for exit.
   The open state excludes [data-closing] so the exit can play while the dialog is still in the top layer (see sync()).
@@ -159,13 +159,17 @@ const onClick = (event: MouseEvent) => {
   transition: scale 0.35s --theme(--ease-inOutSine);
 }
 
-.ui-modal__header,
-.ui-modal__content {
+.ui-modal__header {
   opacity: 0;
   filter: blur(4px);
   transition:
     opacity 0.35s --theme(--ease-inOutSine),
     filter 0.35s --theme(--ease-inOutSine);
+}
+
+.ui-modal__content {
+  opacity: 0;
+  transition: opacity 0.35s --theme(--ease-inOutSine);
 }
 
 .ui-modal[open]:not([data-closing])::backdrop {
@@ -178,14 +182,18 @@ const onClick = (event: MouseEvent) => {
   transition: scale 1.4s --theme(--ease-outQuint) 0.25s;
 }
 
-.ui-modal[open]:not([data-closing]) .ui-modal__header,
-.ui-modal[open]:not([data-closing]) .ui-modal__content {
+.ui-modal[open]:not([data-closing]) .ui-modal__header {
   opacity: 1;
-  /* `none` rather than blur(0) so no filter layer sits over the pages while scrolling; it still interpolates. */
+  /* `none` rather than blur(0) so no filter layer is kept once it's sharp; it still interpolates. */
   filter: none;
   transition:
     opacity 1.1s --theme(--ease-outQuint) 0.25s,
     filter 1.1s --theme(--ease-outQuint) 0.25s;
+}
+
+.ui-modal[open]:not([data-closing]) .ui-modal__content {
+  opacity: 1;
+  transition: opacity 1.1s --theme(--ease-outQuint) 0.25s;
 }
 
 /* Same selectors as the open state: @starting-style has no cascade priority, so it only wins on matching specificity. */
@@ -194,10 +202,13 @@ const onClick = (event: MouseEvent) => {
     opacity: 0;
   }
 
-  .ui-modal[open]:not([data-closing]) .ui-modal__header,
-  .ui-modal[open]:not([data-closing]) .ui-modal__content {
+  .ui-modal[open]:not([data-closing]) .ui-modal__header {
     opacity: 0;
     filter: blur(4px);
+  }
+
+  .ui-modal[open]:not([data-closing]) .ui-modal__content {
+    opacity: 0;
   }
 
   .ui-modal[open]:not([data-closing]) .ui-modal__scroller {
